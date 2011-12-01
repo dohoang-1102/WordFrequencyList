@@ -17,8 +17,6 @@
 {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        CGRect rect = self.bounds;
-        
         self.backgroundView         = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"word-group-bg"]];
         self.selectedBackgroundView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"word-group-bg"]];
         
