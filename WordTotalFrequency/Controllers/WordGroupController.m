@@ -1,0 +1,153 @@
+//
+//  WordGroupController.m
+//  WordFrequencyList
+//
+//  Created by hx on 12/1/11.
+//  Copyright (c) 2011 __MyCompanyName__. All rights reserved.
+//
+
+#import "WordGroupController.h"
+#import "DashboardView.h"
+#import "UIColor+WTF.h"
+#import "CustomProgress.h"
+#import "DataController.h"
+
+
+#define ICON_IMAGE_TAG 1
+#define PERCENT_LABEL_TAG 2
+#define PROGRESS_TAG 3
+
+@implementation WordGroupController
+
+@synthesize wordSet         = _wordSet;
+@synthesize fetchRequest    = _fetchRequest;
+@synthesize viewContainer   = _viewContainer;
+
+
+- (void)backAction
+{
+    [self.navigationController popViewControllerAnimated:YES];
+}
+
+- (void)updateMarkedCount
+{
+    NSPredicate *predicate;
+    NSError *error;
+    NSUInteger count;
+    
+    predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 1", _wordSet.categoryId];
+    [self.fetchRequest setPredicate:predicate];
+    count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
+    _wordSet.intermediateMarkedWordCount = count;
+    
+    predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 2", _wordSet.categoryId];
+    [self.fetchRequest setPredicate:predicate];
+    count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
+    _wordSet.completeMarkedWordCount = count;
+    
+    // update control
+    [(UILabel *)[self.view viewWithTag:PERCENT_LABEL_TAG] setText:[NSString stringWithFormat:@"%d / %d", _wordSet.markedWordCount, _wordSet.totalWordCount]];
+    CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
+    NSInteger percent =  [_wordSet.completePercentage integerValue];
+    progress.currentValue = percent;
+    
+}
+
+- (NSFetchRequest *)fetchRequest
+{
+    if (_fetchRequest != nil)
+    {
+        return _fetchRequest;
+    }
+    
+    _fetchRequest = [[NSFetchRequest alloc] init];
+    NSEntityDescription *entity = [NSEntityDescription entityForName:@"Word"
+                                              inManagedObjectContext:[DataController sharedDataController].managedObjectContext];
+    [_fetchRequest setEntity:entity];
+    return _fetchRequest;
+}
+
+#pragma mark - View lifecycle
+
+
+// Implement loadView to create a view hierarchy programmatically, without using a nib.
+- (void)loadView
+{
+    CGRect rect = [UIScreen mainScreen].applicationFrame;
+    
+    self.view = [[[DashboardView alloc] initWithFrame:rect] autorelease];
+    
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    button.frame = CGRectMake(0, 2, 44, 44);
+    [button setImage:[UIImage imageNamed:@"arrow-back"] forState:UIControlStateNormal];
+    [button addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
+    [button setShowsTouchWhenHighlighted:YES];
+    [self.view addSubview:button];
+    
+    
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(70, 7, 30, 30)];
+    imageView.tag = ICON_IMAGE_TAG;
+    [self.view addSubview:imageView];
+    [imageView release];
+    
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(114, 4, 160, 16)];
+    label.backgroundColor = [UIColor clearColor];
+    label.font = [UIFont systemFontOfSize:14];
+    label.textColor = [UIColor colorForNormalText];
+    label.tag = PERCENT_LABEL_TAG;
+    [self.view addSubview:label];
+    [label release];
+    
+    CustomProgress *progress = [[CustomProgress alloc] initWithFrame:CGRectMake(110, 21, 160, 13)];
+    progress.tag = PROGRESS_TAG;
+    [self.view addSubview:progress];
+    [progress release];
+    
+    UILabel *line = [[UILabel alloc] initWithFrame:CGRectMake(0, 44, CGRectGetWidth(rect), 1.5)];
+    line.backgroundColor = [UIColor colorWithWhite:1.f alpha:.6f];
+    [self.view addSubview:line];
+    [line release];
+    
+    _viewContainer = [[UIView alloc] initWithFrame:CGRectMake(0,
+                                                              45,
+                                                              CGRectGetWidth(self.view.bounds),
+                                                              CGRectGetHeight(self.view.bounds)-45)];
+    [self.view addSubview:_viewContainer];
+}
+
+
+// Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    [(UIImageView *)[self.view viewWithTag:ICON_IMAGE_TAG] setImage:[UIImage imageNamed:_wordSet.iconUrl]];
+    CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
+    [progress setImageName:[NSString stringWithFormat:@"progress-fg-%d", _wordSet.categoryId+1]];
+    NSInteger percent =  [_wordSet.completePercentage integerValue];
+    progress.currentValue = percent;
+    
+    _groupListController   = [[WordGroupListController alloc]init];
+    _groupListController.view.frame = _viewContainer.bounds;
+    [_viewContainer addSubview:_groupListController.view];
+}
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    
+    [self updateMarkedCount];
+}
+/*- (void)viewDidUnload
+{
+    [super viewDidUnload];
+    // Release any retained subviews of the main view.
+    // e.g. self.myOutlet = nil;
+}*/
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    // Return YES for supported orientations
+    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+}
+
+@end

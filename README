@@ -1,0 +1,31 @@
+* How to import mysql data to Core Data:
+1.  run mysql service (it's XAMPP in my case)
+2.  open Terminal, go to "/Users/Perry/projects/WordTotalFrequency2/WordTotalFrequency/Data Importer"
+3.  run command: "./mysql2sqlite.sh -u root wtf_cn | sqlite3 mysql.sqlite"
+    (note: if exception thrown, check if mysql.sqlite exists under Data Importer, delete it if it exists)
+4.  run command: "python sqlite2coredata.py"
+
+* How to include mp3 in build?
+1. uncomment lines 203-209 in WordDetailView.m
+2. goto project build settings -> EXCLUDED_SOURCE_FILE_NAMES, clear value "*.mp3"
+3. clean project by executing "Product->Clean" command
+4. build the project
+
+* How to normalize words fields
+1. phonetic symbol
+    update word set phonetic = CONCAT(phonetic, " ") where locate("/", phonetic)>0
+    update word set phonetic = REPLACE(phonetic, "/", "[")
+    update word set phonetic = REPLACE(phonetic, "[ ", "] ")
+    update word set phonetic = TRIM(phonetic)
+2. translate ending
+    update word set translate = REPLACE(translate, "；", "") where translate LIKE "%；"
+    update word set translate = REPLACE(translate, ";", "") where translate LIKE "%;"
+3. detail ending
+    update word set detail = REPLACE(detail, "；\n", "\n") 
+    update word set detail = REPLACE(detail, ";\n", "\n") 
+4. tags
+    update word set tags = CONCAT(tags, 'cet4,') where LOCATE('cet4', tags)=0 and spell in (select spell from cet4)
+
+
+*** to clean .git
+find . | grep .svn | xargs rm -rf
