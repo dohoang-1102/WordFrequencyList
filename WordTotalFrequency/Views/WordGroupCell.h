@@ -17,6 +17,5 @@
 }
 
 @property (nonatomic, retain) WordGroup *wordGroup;
-@property (nonatomic, assign) UITableView *ownerTable;
 
 @end

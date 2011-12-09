@@ -35,6 +35,7 @@ typedef enum {
 @property (nonatomic, copy) NSString *searchString;
 @property (nonatomic, assign) WordSetController *wordSetController;
 @property (nonatomic) NSInteger wordSetIndex;
+@property (nonatomic) NSUInteger wordGroupIndex;
 @property (nonatomic) WordListType listType;
 
 - (id)initWIthListType:(WordListType)listType;

@@ -11,10 +11,15 @@
 @interface WordGroup : NSObject{
     
 }
-@property (nonatomic) NSInteger totalWordCount;
-@property (nonatomic, readonly) NSInteger markedWordCount;
-@property (nonatomic) NSInteger intermediateMarkedWordCount;
-@property (nonatomic) NSInteger completeMarkedWordCount;
-@property (nonatomic, readonly) NSNumber *completePercentage;
+
+@property (nonatomic) NSUInteger startNumber;
+@property (nonatomic) NSUInteger totalWordCount;
+@property (nonatomic, readonly) NSUInteger markedWordCount;
+@property (nonatomic) NSUInteger intermediateMarkedWordCount;
+@property (nonatomic) NSUInteger completeMarkedWordCount;
+@property (nonatomic, readonly) float completePercentage;
+
+@property (nonatomic) NSUInteger categoryId;
+@property (nonatomic) NSUInteger groupId;
 
 @end

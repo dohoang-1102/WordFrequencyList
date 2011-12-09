@@ -37,12 +37,12 @@
     return _intermediateMarkedWordCount + _completeMarkedWordCount;
 }
 
-- (NSNumber*)completePercentage
+- (float)completePercentage
 {
     if (_totalWordCount <= 0)
         return 0;
     else
-        return [NSNumber numberWithFloat: self.markedWordCount * 100.f / _totalWordCount ];
+        return self.markedWordCount * 100.f / _totalWordCount;
 }
 
 @end

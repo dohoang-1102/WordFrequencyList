@@ -14,7 +14,7 @@
 #import "Word.h"
 
 #define MANAGED_OBJECT_CONTEXT [[DataController sharedDataController] managedObjectContext]
-#define SQL_DATABASE_NAME @"WordTotalFrequency"
+#define SQL_DATABASE_NAME @"WordFrequencyList"
 
 @interface DataController : NSObject<UIAlertViewDelegate> {
     NSManagedObjectModel *_managedObjectModel;

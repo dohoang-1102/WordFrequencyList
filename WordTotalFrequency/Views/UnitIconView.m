@@ -84,13 +84,13 @@ const float INSET_OFFSET = 4;
     if (_wordSet != wordSet)
     {
         _wordSet = wordSet;
-        _percentArc = [wordSet.completePercentage floatValue]  * 2 * M_PI / 100.f -  M_PI / 2;
+        _percentArc = wordSet.completePercentage * 2 * M_PI / 100.f -  M_PI / 2;
     }
 }
 
 - (void)updateData
 {
-    _percentArc = [_wordSet.completePercentage floatValue]  * 2 * M_PI / 100.f -  M_PI / 2;
+    _percentArc = _wordSet.completePercentage * 2 * M_PI / 100.f -  M_PI / 2;
 }
 
 - (void)addCADisplayLink

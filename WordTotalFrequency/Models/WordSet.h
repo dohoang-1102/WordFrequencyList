@@ -17,7 +17,7 @@
 @property (nonatomic, readonly) NSInteger markedWordCount;
 @property (nonatomic) NSInteger intermediateMarkedWordCount;
 @property (nonatomic) NSInteger completeMarkedWordCount;
-@property (nonatomic, readonly) NSNumber *completePercentage;
+@property (nonatomic, readonly) float completePercentage;
 @property (nonatomic, copy) NSString *description;
 @property (nonatomic, retain) UIColor *color;
 @property (nonatomic, retain) UIColor *arrowColor;

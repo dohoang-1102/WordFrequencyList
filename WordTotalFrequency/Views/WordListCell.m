@@ -17,7 +17,6 @@
 @synthesize word = _word;
 
 @synthesize wordSetController = _wordSetController;
-@synthesize ownerTable = _ownerTable;
 
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
 {
@@ -54,11 +53,6 @@
     return self;
 }
 
-- (void)setSelected:(BOOL)selected animated:(BOOL)animated
-{
-    [super setSelected:selected animated:animated];
-}
-
 - (void)dealloc
 {
     [_word release];
@@ -82,16 +76,6 @@
         _word = [word retain];
     }
 }
-
-/*
-- (void)drawRect:(CGRect)rect
-{
-    [[UIColor whiteColor] set];
-    [_word.translate drawAtPoint:CGPointMake(144.5, 11) withFont:[UIFont systemFontOfSize:18]];
-    [[UIColor colorForNormalText] set];
-    [_word.translate drawAtPoint:CGPointMake(144, 10) withFont:[UIFont systemFontOfSize:18]];
-}
- */
 
 - (void)layoutSubviews
 {

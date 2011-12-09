@@ -29,7 +29,7 @@ typedef enum {
 @implementation WordSetController
 
 @synthesize viewContainer = _viewContainer;
-@synthesize wordSet = _wordSet;
+@synthesize wordGroup = _wordGroup;
 @synthesize currentTestWordIndex = _currentTestWordIndex;
 @synthesize fetchRequest = _fetchRequest;
 @synthesize wordTestView = _wordTestView;
@@ -45,14 +45,14 @@ typedef enum {
 
 - (NSArray *)testingWords
 {
-    NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSet.categoryId];
+    NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordGroup.categoryId];
     if ([[dict valueForKey:@"testMarked"] boolValue]){
         if (_testingWords == nil){
             NSFetchRequest *_fetchTestingRequest = [[NSFetchRequest alloc] init];
             NSEntityDescription *entity = [NSEntityDescription entityForName:@"Word"
                                                       inManagedObjectContext:[DataController sharedDataController].managedObjectContext];
             [_fetchTestingRequest setEntity:entity];
-            [_fetchTestingRequest setPredicate:[NSPredicate predicateWithFormat:@"category = %d and markStatus = 0", _wordSet.categoryId]];
+            [_fetchTestingRequest setPredicate:[NSPredicate predicateWithFormat:@"category = %d  and group = %d and markStatus = 0", _wordGroup.categoryId, _wordGroup.groupId]];
             
             NSError *error = nil;
             NSAutoreleasePool *ap = [[NSAutoreleasePool alloc] init];
@@ -73,14 +73,7 @@ typedef enum {
 }
 
 - (void)dealloc
-{
-    // remember scroll position
-    WordListCell *cell = [[_listController.tableView visibleCells] objectAtIndex:0];
-    int topIndex = [_listController.tableView indexPathForCell:cell].row;
-    NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSet.categoryId];
-    [dict setValue:[NSNumber numberWithInt:topIndex] forKey:@"listTopWordIndex"];
-    [[DataController sharedDataController] saveSettingsDictionary];
-    
+{    
     [MANAGED_OBJECT_CONTEXT reset];
     [NSFetchedResultsController deleteCacheWithName:nil];
 
@@ -105,7 +98,7 @@ typedef enum {
     
     [_segmentedControl release];
     [_viewContainer release];
-    [_wordSet release];
+    [_wordGroup release];
     [super dealloc];
 }
 
@@ -120,21 +113,20 @@ typedef enum {
     NSError *error;
     NSUInteger count;
 
-    predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 1", _wordSet.categoryId];
+    predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 1", _wordGroup.categoryId, _wordGroup.groupId];
     [self.fetchRequest setPredicate:predicate];
     count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-    _wordSet.intermediateMarkedWordCount = count;
+    _wordGroup.intermediateMarkedWordCount = count;
     
-    predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 2", _wordSet.categoryId];
+    predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 2", _wordGroup.categoryId, _wordGroup.groupId];
     [self.fetchRequest setPredicate:predicate];
     count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-    _wordSet.completeMarkedWordCount = count;
+    _wordGroup.completeMarkedWordCount = count;
 
     // update control
-    [(UILabel *)[self.view viewWithTag:PERCENT_LABEL_TAG] setText:[NSString stringWithFormat:@"%d / %d", _wordSet.markedWordCount, _wordSet.totalWordCount]];
+    [(UILabel *)[self.view viewWithTag:PERCENT_LABEL_TAG] setText:[NSString stringWithFormat:@"%d / %d", _wordGroup.markedWordCount, _wordGroup.totalWordCount]];
     CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
-    NSInteger percent =  [_wordSet.completePercentage integerValue];
-    progress.currentValue = percent;
+    progress.currentValue = _wordGroup.completePercentage;
 
 }
 
@@ -267,14 +259,14 @@ typedef enum {
 {
     [super viewDidLoad];
     
-    [(UIImageView *)[self.view viewWithTag:ICON_IMAGE_TAG] setImage:[UIImage imageNamed:_wordSet.iconUrl]];
+    [(UIImageView *)[self.view viewWithTag:ICON_IMAGE_TAG] setImage:[UIImage imageNamed:[NSString stringWithFormat:@"unit-%d", _wordGroup.categoryId+1]]];
     CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
-    [progress setImageName:[NSString stringWithFormat:@"progress-fg-%d", _wordSet.categoryId+1]];
-    NSInteger percent =  [_wordSet.completePercentage integerValue];
-    progress.currentValue = percent;
+    [progress setImageName:[NSString stringWithFormat:@"progress-fg-%d", _wordGroup.categoryId+1]];
+    progress.currentValue = _wordGroup.completePercentage;
     
     _listController = [[WordListController alloc] initWIthListType:WordListTypeWordSet];
-    _listController.wordSetIndex = _wordSet.categoryId;
+    _listController.wordSetIndex = _wordGroup.categoryId;
+    _listController.wordGroupIndex = _wordGroup.groupId;
     _listController.wordSetController = self;
     _listController.view.frame = _viewContainer.bounds;
     [_viewContainer addSubview:_listController.view];
@@ -438,7 +430,8 @@ typedef enum {
     if (_historyController == nil)
     {
         _historyController = [[WordListController alloc] initWIthListType:WordListTypeHistory];
-        _historyController.wordSetIndex = _wordSet.categoryId;
+        _historyController.wordSetIndex = _wordGroup.categoryId;
+        _historyController.wordGroupIndex = _wordGroup.groupId;
         _historyController.wordSetController = self;
         _historyController.view.frame = _viewContainer.bounds;
     }

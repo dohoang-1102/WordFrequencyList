@@ -18,19 +18,12 @@
 
 - (void)navigateToWordGroupController
 {
-    /*WordGroupController *wgc = [[WordGroupController alloc] init];
+    WordGroupController *wgc = [[WordGroupController alloc] init];
     wgc.wordSet = _wordSet;
     
     WordTotalFrequencyAppDelegate *del = (WordTotalFrequencyAppDelegate *)[UIApplication sharedApplication].delegate;
     [del.navigationController pushViewController:wgc animated:YES];
-    [wgc release];*/
-    
-    WordSetController *wsc = [[WordSetController alloc] init];
-    wsc.wordSet = _wordSet;
-    
-    WordTotalFrequencyAppDelegate *del = (WordTotalFrequencyAppDelegate *)[UIApplication sharedApplication].delegate;
-    [del.navigationController pushViewController:wsc animated:YES];
-    [wsc release];
+    [wgc release];
 }
 
 - (void)fadeSelectedBackground
@@ -82,7 +75,7 @@
         _countNoteLabel.numberOfLines = 0;
         _countNoteLabel.text = @"个单词被标记为\n(熟悉/记住)了";
         [_countNoteLabel setFontColor:[UIColor colorForNormalText]];
-        [_countNoteLabel setLineHeight:13];
+        [_countNoteLabel setLineHeight:15];
         _countNoteLabel.textAlignment = MTLabelTextAlignmentLeft;
         [self addSubview:_countNoteLabel];
         
@@ -147,10 +140,9 @@
     _arrowLayer.arrowAreaColor = _wordSet.arrowColor;
     _countlabel.text = [NSString stringWithFormat:@"%d", _wordSet.markedWordCount];
     _countlabel.textColor = _wordSet.color;
-    [_percentLabel setText:[NSString stringWithFormat:@"%.02f %%", [_wordSet.completePercentage floatValue]]];
+    [_percentLabel setText:[NSString stringWithFormat:@"%.02f %%", _wordSet.completePercentage]];
     [_progress setImageName:[NSString stringWithFormat:@"progress-fg-%d", _wordSet.categoryId+1]];
-    NSInteger percent =  [_wordSet.completePercentage integerValue];
-    _progress.currentValue =  percent;
+    _progress.currentValue =  _wordSet.completePercentage;
     [_tableView reloadData];
     
     [_arrowLayer setNeedsDisplay];

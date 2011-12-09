@@ -8,17 +8,15 @@
 
 #import <UIKit/UIKit.h>
 #import "WordSetController.h"
-#import "WordGroupListController.h"
+#import "WordSet.h"
+#import "WordGroup.h"
 
-@interface WordGroupController : UIViewController{
-    WordGroupListController *_groupListController;
+@interface WordGroupController : UIViewController<UITableViewDelegate, UITableViewDataSource>{
 }
 
 @property (nonatomic, retain) WordSet *wordSet;
 @property (nonatomic, retain) NSFetchRequest *fetchRequest;
-@property (nonatomic, retain) UIView *viewContainer;
-
+@property (nonatomic, retain) UITableView *tableView;
+@property (nonatomic, retain) NSMutableArray *groups;
 
 @end
-
-

@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "WordListController.h"
-#import "WordSet.h"
+#import "WordGroup.h"
 #import "WordTestView.h"
 #import "SettingsView.h"
 #import "CustomSegmentedControl.h"
@@ -24,7 +24,7 @@
 }
 
 @property (nonatomic, retain) UIView *viewContainer;
-@property (nonatomic, retain) WordSet *wordSet;
+@property (nonatomic, retain) WordGroup *wordGroup;
 @property (nonatomic, readonly) NSArray *testingWords;
 @property (nonatomic, readonly) NSArray *listingWords;
 @property (nonatomic) NSUInteger currentTestWordIndex;

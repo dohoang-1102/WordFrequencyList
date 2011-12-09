@@ -11,6 +11,8 @@
 #import "UIColor+WTF.h"
 #import "CustomProgress.h"
 #import "DataController.h"
+#import "WordGroupCell.h"
+#import "WordTotalFrequencyAppDelegate.h"
 
 
 #define ICON_IMAGE_TAG 1
@@ -21,7 +23,8 @@
 
 @synthesize wordSet         = _wordSet;
 @synthesize fetchRequest    = _fetchRequest;
-@synthesize viewContainer   = _viewContainer;
+@synthesize tableView       = _tableView;
+@synthesize groups          = _groups;
 
 
 - (void)backAction
@@ -48,8 +51,7 @@
     // update control
     [(UILabel *)[self.view viewWithTag:PERCENT_LABEL_TAG] setText:[NSString stringWithFormat:@"%d / %d", _wordSet.markedWordCount, _wordSet.totalWordCount]];
     CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
-    NSInteger percent =  [_wordSet.completePercentage integerValue];
-    progress.currentValue = percent;
+    progress.currentValue = _wordSet.completePercentage;
     
 }
 
@@ -67,12 +69,48 @@
     return _fetchRequest;
 }
 
+- (void)loadData
+{
+    self.groups = [NSMutableArray array];
+    
+    int currentGroupId = 0;
+    int startNumber = 1;
+    
+    while (YES) {
+        NSPredicate *predicate;
+        NSError *error;
+        NSUInteger count;
+        
+        predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d", _wordSet.categoryId, currentGroupId];
+        [self.fetchRequest setPredicate:predicate];
+        count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
+        
+        if (count > 0) {
+            WordGroup *wg = [[WordGroup alloc] init];
+            wg.categoryId = _wordSet.categoryId;
+            wg.groupId = currentGroupId;
+            wg.startNumber = startNumber;
+            wg.totalWordCount = count;
+            [self.groups addObject:wg];
+            [wg release];
+            
+            currentGroupId++;
+            startNumber += count;
+        }
+        else {
+            break;
+        }
+    }
+}
+
 #pragma mark - View lifecycle
 
 
 // Implement loadView to create a view hierarchy programmatically, without using a nib.
 - (void)loadView
 {
+    [self loadData];
+    
     CGRect rect = [UIScreen mainScreen].applicationFrame;
     
     self.view = [[[DashboardView alloc] initWithFrame:rect] autorelease];
@@ -108,11 +146,15 @@
     [self.view addSubview:line];
     [line release];
     
-    _viewContainer = [[UIView alloc] initWithFrame:CGRectMake(0,
+    _tableView = [[UITableView alloc] initWithFrame:CGRectMake(0,
                                                               45,
                                                               CGRectGetWidth(self.view.bounds),
                                                               CGRectGetHeight(self.view.bounds)-45)];
-    [self.view addSubview:_viewContainer];
+    _tableView.backgroundColor = [UIColor clearColor];
+    _tableView.separatorColor = [UIColor colorWithWhite:1.f alpha:.5f];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
 }
 
 
@@ -124,30 +166,55 @@
     [(UIImageView *)[self.view viewWithTag:ICON_IMAGE_TAG] setImage:[UIImage imageNamed:_wordSet.iconUrl]];
     CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
     [progress setImageName:[NSString stringWithFormat:@"progress-fg-%d", _wordSet.categoryId+1]];
-    NSInteger percent =  [_wordSet.completePercentage integerValue];
-    progress.currentValue = percent;
-    
-    _groupListController   = [[WordGroupListController alloc]init];
-    _groupListController.view.frame = _viewContainer.bounds;
-    [_viewContainer addSubview:_groupListController.view];
+    progress.currentValue = _wordSet.completePercentage;
 }
+
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
     
     [self updateMarkedCount];
 }
-/*- (void)viewDidUnload
-{
-    [super viewDidUnload];
-    // Release any retained subviews of the main view.
-    // e.g. self.myOutlet = nil;
-}*/
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+- (void)dealloc
 {
-    // Return YES for supported orientations
-    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+    [_wordSet release];
+    [_fetchRequest release];
+    [_tableView release];
+    [_groups release];
+    
+    [super dealloc];
+}
+
+#pragma mark - UITableViewDataSource & Delegate
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return [self.groups count];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 55;
+}
+
+// Customize the appearance of table view cells.
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *CellIdentifier = @"Cell";
+    WordGroupCell *cell = (WordGroupCell *)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    if (cell == nil) {
+        cell = [[[WordGroupCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
+    }
+    cell.wordGroup = [self.groups objectAtIndex:indexPath.row];
+    return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    WordSetController *wsc = [[WordSetController alloc] init];
+    wsc.wordGroup = [self.groups objectAtIndex:indexPath.row];
+    
+    WordTotalFrequencyAppDelegate *del = (WordTotalFrequencyAppDelegate *)[UIApplication sharedApplication].delegate;
+    [del.navigationController pushViewController:wsc animated:YES];
+    [wsc release];
 }
 
 @end

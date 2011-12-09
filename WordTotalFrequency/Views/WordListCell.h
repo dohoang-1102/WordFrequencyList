@@ -21,6 +21,5 @@
 @property (nonatomic, retain) Word *word;
 
 @property (nonatomic, assign) WordSetController *wordSetController;
-@property (nonatomic, assign) UITableView *ownerTable;
 
 @end

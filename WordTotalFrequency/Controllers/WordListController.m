@@ -23,6 +23,7 @@
 @synthesize searchString = _searchString;
 @synthesize wordSetController = _wordSetController;
 @synthesize wordSetIndex = _wordSetIndex;
+@synthesize wordGroupIndex = _wordGroupIndex;
 @synthesize listType = _listType;
 
 static NSString *predicateString;
@@ -71,10 +72,10 @@ static NSPredicate *searchPredicate;
         self.tableView.backgroundColor = [UIColor colorForTheme];
         if (_listType == WordListTypeWordSet)
             [self.fetchedResultsController.fetchRequest
-             setPredicate:[NSPredicate predicateWithFormat:@"category = %d", _wordSetIndex]];
+             setPredicate:[NSPredicate predicateWithFormat:@"category = %d and group = %d", _wordSetIndex, _wordGroupIndex]];
         else
             [self.fetchedResultsController.fetchRequest
-             setPredicate:[NSPredicate predicateWithFormat:@"category = %d and markStatus > 0", _wordSetIndex]];
+             setPredicate:[NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus > 0", _wordSetIndex, _wordGroupIndex]];
     }
     else
     {
@@ -115,17 +116,6 @@ static NSPredicate *searchPredicate;
                         
                         dispatch_sync(main_queue, ^{
                             [blockSelf.tableView reloadData];
-                            // load scroll index
-                            NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSetIndex];
-                            int topIndex = [[dict valueForKey:@"listTopWordIndex"] intValue];
-                            if (topIndex > 0 && _listType == WordListTypeWordSet){
-                                NSUInteger ii[2] = {0, topIndex};
-                                NSIndexPath* indexPath = [NSIndexPath indexPathWithIndexes:ii length:2];
-                                [blockSelf.tableView scrollToRowAtIndexPath:indexPath
-                                                           atScrollPosition:UITableViewScrollPositionTop
-                                                                   animated:YES];
-                            }
-                            
                             dispatch_release(request_queue);
                         });
                     });
@@ -185,7 +175,6 @@ static NSPredicate *searchPredicate;
             
             dispatch_sync(main_queue, ^{
                 [blockSelf.tableView reloadData];
-                
                 dispatch_release(request_queue);
             });
         });
@@ -237,18 +226,15 @@ static NSPredicate *searchPredicate;
     if (cell == nil) {
         cell = [[[WordListCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
         cell.wordSetController = _wordSetController;
-        cell.ownerTable = tableView;
     }
     
-    cell.word = [_fetchedResultsController objectAtIndexPath:indexPath];    
-    
+    cell.word = [_fetchedResultsController objectAtIndexPath:indexPath];
     return cell;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     Word *word = (Word *)[[self fetchedResultsController] objectAtIndexPath:indexPath];
-    [self.delegate willSelectWord:word];
     [self.delegate willSelectWord:word];
     
     WordDetailController *controller = [[WordDetailController alloc] init];

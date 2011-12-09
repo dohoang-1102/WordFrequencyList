@@ -118,7 +118,7 @@
         [label release];
         
         UISwitch *toggle = [[UISwitch alloc] initWithFrame:CGRectMake(210, 188, 94, 30)];
-        NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSetController.wordSet.categoryId];
+        NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSetController.wordGroup.categoryId];
         toggle.on = [[dict valueForKey:@"testMarked"] boolValue];
         [toggle addTarget:self action:@selector(toggleMarkedOnly:) forControlEvents:UIControlEventValueChanged];
         [self addSubview:toggle];
@@ -211,22 +211,17 @@
     [alert show];
 }
 
-
-
 - (void)toggleMarkedOnly:(UISwitch *)toggle
 {
-    NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSetController.wordSet.categoryId];
+    NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSetController.wordGroup.categoryId];
     [dict setValue:[NSNumber numberWithBool:toggle.on] forKey:@"testMarked"];
     [[DataController sharedDataController] saveSettingsDictionary];
     
     [[NSNotificationCenter defaultCenter] postNotificationName:TEST_SETTING_CHANGED_NOTIFICATION object:self];
 }
 
-
-
 - (void)toggleNotification:(UISwitch *)toggle
 {
-
         if (toggle.on){
         
         }
@@ -236,10 +231,7 @@
     
         [[DataController sharedDataController] setNotificationOn:toggle.on];
         [[DataController sharedDataController] saveSettingsDictionary];
-    
 }
-
-
 
 - (void)toggleAutoSpeak:(UISwitch *)toggle
 {
@@ -258,7 +250,7 @@
         if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
             NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=2, ZMARKDATE='%@' WHERE ZCATEGORY=%d AND ZMARKSTATUS=0",
                              [[NSDate date] formatLongDate],
-                             _wordSetController.wordSet.categoryId];
+                             _wordSetController.wordGroup.categoryId];
             sqlite3_stmt *statement;
             if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
                 sqlite3_step(statement);
@@ -278,7 +270,7 @@
             sqlite3 *database;
             NSString *dbPath = [[DataController sharedDataController] dbPath];
             if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
-                NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=0, ZMARKDATE='' WHERE ZCATEGORY=%d AND ZMARKSTATUS>0", _wordSetController.wordSet.categoryId];
+                NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=0, ZMARKDATE='' WHERE ZCATEGORY=%d AND ZMARKSTATUS>0", _wordSetController.wordGroup.categoryId];
                 sqlite3_stmt *statement;
                 if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
                     sqlite3_step(statement);

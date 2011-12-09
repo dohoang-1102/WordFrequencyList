@@ -21,6 +21,7 @@
 @property (nonatomic, retain) NSString *tags;
 @property (nonatomic, retain) NSString *detail;
 @property (nonatomic, retain) NSNumber *category;
+@property (nonatomic, retain) NSNumber *group;
 @property (nonatomic, retain) NSNumber *markStatus;
 @property (nonatomic, retain) NSString *markDate;
 
