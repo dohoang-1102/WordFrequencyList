@@ -248,9 +248,9 @@
         sqlite3 *database;
         NSString *dbPath = [[DataController sharedDataController] dbPath];
         if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
-            NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=2, ZMARKDATE='%@' WHERE ZCATEGORY=%d AND ZMARKSTATUS=0",
+            NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=2, ZMARKDATE='%@' WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS=0",
                              [[NSDate date] formatLongDate],
-                             _wordSetController.wordGroup.categoryId];
+                             _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
             sqlite3_stmt *statement;
             if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
                 sqlite3_step(statement);
@@ -270,7 +270,7 @@
             sqlite3 *database;
             NSString *dbPath = [[DataController sharedDataController] dbPath];
             if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
-                NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=0, ZMARKDATE='' WHERE ZCATEGORY=%d AND ZMARKSTATUS>0", _wordSetController.wordGroup.categoryId];
+                NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=0, ZMARKDATE='' WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS>0", _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
                 sqlite3_stmt *statement;
                 if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
                     sqlite3_step(statement);

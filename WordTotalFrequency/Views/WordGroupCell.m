@@ -69,7 +69,7 @@
 
     _idLabel.text = [NSString stringWithFormat:@"%d.", _wordGroup.groupId + 1];
     _titleLabel.text = [NSString stringWithFormat:@"第 %d - %d 个单词", _wordGroup.startNumber, _wordGroup.startNumber+_wordGroup.totalWordCount-1];
-    _percentLabel.text = [NSString stringWithFormat:@"%.02f %%", _wordGroup.completePercentage];
+    _percentLabel.text = [NSString stringWithFormat:@"%.1f%%", _wordGroup.completePercentage];
 }
 
 - (void)dealloc

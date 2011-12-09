@@ -53,6 +53,18 @@
     CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
     progress.currentValue = _wordSet.completePercentage;
     
+    // update percent for groups
+    for (WordGroup *wordGroup in self.groups) {
+        predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 1", wordGroup.categoryId, wordGroup.groupId];
+        [self.fetchRequest setPredicate:predicate];
+        count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
+        wordGroup.intermediateMarkedWordCount = count;
+        
+        predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 2", wordGroup.categoryId, wordGroup.groupId];
+        [self.fetchRequest setPredicate:predicate];
+        count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
+        wordGroup.completeMarkedWordCount = count;
+    }
 }
 
 - (NSFetchRequest *)fetchRequest
@@ -174,6 +186,7 @@
     [super viewDidAppear:animated];
     
     [self updateMarkedCount];
+    [self.tableView reloadData];
 }
 
 - (void)dealloc
