@@ -51,16 +51,16 @@ for row in inCursor:
 	vals.append(1)                                          # Z_ENT
 	vals.append(1)                                          # Z_OPT
 	vals.append(0)                                          # ZMARKSTATUS
-	vals.append(row[3])                                     # ZRANK
+	vals.append(row[2])                                     # ZRANK
 	vals.append(getCategoryId(count))                       # ZCATEGORY	row[11]
 	vals.append(getGroupId(getCategoryId(count), count))    # ZGROUP
-	vals.append(row[7])                                     # ZTRANSLATE
+	vals.append(row[3])                                     # ZTRANSLATE
 	vals.append("")                                         # ZMARKDATE
 	vals.append(row[1])                                     # ZSPELL
-	vals.append(row[4])                                     # ZPHONETIC
-	vals.append(row[9])                                     # ZDETAIL
-	vals.append(row[5])                                     # ZSOUNDFILE
-	vals.append(row[8])                                     # ZTAGS
+	vals.append(row[5])                                     # ZPHONETIC
+	vals.append(row[4])                                     # ZDETAIL
+	vals.append(row[6])                                     # ZSOUNDFILE
+	vals.append(row[7])                                     # ZTAGS
 	outConn.execute("insert into ZWORD values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", vals)
     
     

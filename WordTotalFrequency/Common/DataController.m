@@ -60,6 +60,97 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     return _managedObjectModel;
 }
 
+- (void)manualMigrateDatabase
+{
+    sqlite3 *database;
+    NSString *existingUUID, *thisUUID;
+    
+    NSString *sql = @"SELECT Z_UUID FROM Z_METADATA";
+    // get existing uuid
+    if (sqlite3_open([self.dbPath UTF8String], &database) == SQLITE_OK) {
+        sqlite3_stmt *statement;
+        if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
+            if (sqlite3_step(statement) == SQLITE_ROW) {
+                existingUUID = [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)];
+            }
+        }
+        sqlite3_finalize(statement);
+    } else {
+        NSLog(@"failed open db");
+    }
+    sqlite3_close(database);
+    
+    // get bundled uuid
+    if (sqlite3_open([self.bundleDbPath UTF8String], &database) == SQLITE_OK) {
+        sqlite3_stmt *statement;
+        if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
+            if (sqlite3_step(statement) == SQLITE_ROW) {
+                thisUUID = [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)];
+            }
+        }
+        sqlite3_finalize(statement);
+    } else {
+        NSLog(@"failed open db");
+    }
+    sqlite3_close(database);
+    
+    // not equal, update
+    if (![existingUUID isEqualToString:thisUUID]) {
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        
+        // get marked history
+        NSMutableArray *array = [[NSMutableArray alloc] init];
+        if (sqlite3_open([self.dbPath UTF8String], &database) == SQLITE_OK) {
+            sqlite3_stmt *statement;
+            sql = @"SELECT ZSPELL, ZMARKSTATUS, ZMARKDATE FROM ZWORD WHERE ZMARKDATE <> ''";
+            if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
+                while (sqlite3_step(statement) == SQLITE_ROW) {
+                    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                                          [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)], @"spell",
+                                          [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 1)], @"mark",
+                                          [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 2)], @"date",
+                                          nil];
+                    [array addObject:dict];
+                    NSLog(@"%@", dict);
+                }
+            }
+            sqlite3_finalize(statement);
+        } else {
+            NSLog(@"failed open db");
+        }
+        sqlite3_close(database);
+        
+        
+        // remove document db
+        [fileManager removeItemAtPath:self.dbPath error:NULL];
+
+        // copy db from bundle to document directory
+        [fileManager copyItemAtPath:self.bundleDbPath toPath:self.dbPath error:NULL];
+        
+        // update marked history
+        if (sqlite3_open([self.dbPath UTF8String], &database) == SQLITE_OK) {
+            sqlite3_stmt *statement;
+            for (NSDictionary *dict in array) {
+                sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=%d, ZMARKDATE='%@' WHERE ZSPELL='%@'",
+                       [[dict objectForKey:@"mark"] intValue],
+                       [dict objectForKey:@"date"],
+                       [dict objectForKey:@"spell"]];
+                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
+                    sqlite3_step(statement);
+                }
+                sqlite3_finalize(statement);
+            }
+        } else {
+            NSLog(@"failed open db");
+        }
+        sqlite3_close(database);
+        
+        [array release];
+    }
+    
+    database = NULL;
+}
+
 
 /**
  Returns the persistent store coordinator for the application.
@@ -71,13 +162,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
         return _persistentStoreCoordinator;
     }
 		
-	NSString *storePath = [[self applicationDocumentsDirectory] stringByAppendingPathComponent: SQL_DATABASE_NAME];
-	
-	storePath = [storePath stringByAppendingString: @".sqlite"];
-
-	NSURL *storeUrl = [NSURL fileURLWithPath:storePath];
-
-	
 	/*
 	 Set up the store.
 	 For the first run, copy over our initial data.
@@ -86,12 +170,14 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 	
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 	// If the expected store doesn't exist, copy the default store.
-	if (![fileManager fileExistsAtPath:storePath]) {
-		NSString *defaultStorePath = [[NSBundle mainBundle] pathForResource:SQL_DATABASE_NAME ofType:@"sqlite"];
-		if (defaultStorePath) {
-			[fileManager copyItemAtPath:defaultStorePath toPath:storePath error:NULL];
+	if (![fileManager fileExistsAtPath:self.dbPath]) {
+		if (self.bundleDbPath) {
+			[fileManager copyItemAtPath:self.bundleDbPath toPath:self.dbPath error:NULL];
 		}
 	}
+    else {
+        [self manualMigrateDatabase];
+    }
 	
 	
 	//Try to automatically migrate minor changes
@@ -99,7 +185,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 	
 	NSError *error = nil;
     _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
-    if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeUrl options:options error:&error]) {
+    if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:[NSURL fileURLWithPath:self.dbPath] options:options error:&error]) {
 		
 		[self handleError:error fromSource:@"Open persistant store"];
     }    
@@ -253,6 +339,12 @@ static NSDictionary *alldict = nil;
     NSString *storePath = [[self applicationDocumentsDirectory] stringByAppendingPathComponent: SQL_DATABASE_NAME];
 	storePath = [storePath stringByAppendingString: @".sqlite"];
     return storePath;
+}
+
+- (NSString *)bundleDbPath
+{
+    NSString *path = [[NSBundle mainBundle] pathForResource:SQL_DATABASE_NAME ofType:@"sqlite"];
+    return path;
 }
 
 - (NSArray*)getLevelList

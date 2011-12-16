@@ -28,6 +28,7 @@
 
 @property (nonatomic, readonly) NSDictionary *settingsDictionary;
 @property (nonatomic, readonly) NSString *dbPath;
+@property (nonatomic, readonly) NSString *bundleDbPath;
 @property (nonatomic, getter = isNoticationOn) BOOL notificationOn;
 @property (nonatomic, getter = isDetailPageAutoSpeakOn) BOOL detailPageAutoSpeakOn;
 

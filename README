@@ -4,6 +4,7 @@
 3.  run command: "./mysql2sqlite.sh -u root wtf_cn | sqlite3 mysql.sqlite"
     (note: if exception thrown, check if mysql.sqlite exists under Data Importer, delete it if it exists)
 4.  run command: "python sqlite2coredata.py"
+5.  IMPORTANT: remember to change uuid value in metadata table
 
 * How to include mp3 in build?
 1. uncomment lines 203-209 in WordDetailView.m
