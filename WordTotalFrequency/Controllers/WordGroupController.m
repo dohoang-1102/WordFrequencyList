@@ -181,12 +181,17 @@
     progress.currentValue = _wordSet.completePercentage;
 }
 
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    [self updateMarkedCount];
+}
+
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    
-    [self updateMarkedCount];
-    [self.tableView reloadData];
+    [_tableView deselectRowAtIndexPath:[_tableView indexPathForSelectedRow] animated:YES];
 }
 
 - (void)dealloc

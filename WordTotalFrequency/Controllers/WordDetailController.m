@@ -254,14 +254,13 @@ typedef enum {
     // e.g. self.myOutlet = nil;
 }
 
-- (void)viewDidAppear:(BOOL)animated
+- (void)viewWillAppear:(BOOL)animated
 {
-    [super viewDidAppear:animated];
+    [super viewWillAppear:animated];
     
     WordDetailView *view =  [[_containerView subviews] objectAtIndex:0];
     view.word = _word;
     [view updateWordData];
-    
     [self updateMarkOnSegmented];
 }
 

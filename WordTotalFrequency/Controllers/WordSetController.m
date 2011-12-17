@@ -13,6 +13,7 @@
 #import "DataController.h"
 #import "Constant.h"
 #import "WordListCell.h"
+#import "Util.h"
 
 typedef enum {
     CapLeft          = 0,
@@ -42,6 +43,7 @@ typedef enum {
 #define PROGRESS_TAG 3
 
 #define kSegmentLabelTag 99
+
 
 - (NSArray *)testingWords
 {
@@ -127,9 +129,7 @@ typedef enum {
     [(UILabel *)[self.view viewWithTag:PERCENT_LABEL_TAG] setText:[NSString stringWithFormat:@"%d / %d", _wordGroup.markedWordCount, _wordGroup.totalWordCount]];
     CustomProgress *progress = (CustomProgress *)[self.view viewWithTag:PROGRESS_TAG];
     progress.currentValue = _wordGroup.completePercentage;
-
 }
-
 
 
 #pragma mark - notification handler
@@ -173,7 +173,8 @@ typedef enum {
 - (void)batchMarkUpdated:(NSNotification *)note
 {
     [MANAGED_OBJECT_CONTEXT reset];
-    [_listController forceUpdateDataSource];
+    if (Util.iOSVersionMajor < 5)
+        [_listController forceUpdateDataSource];
     [self testSettingChanged:NULL];
 }
 
@@ -272,11 +273,20 @@ typedef enum {
     [_viewContainer addSubview:_listController.view];
 }
 
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    if (Util.iOSVersionMajor < 5)
+        [self updateMarkedCount];
+}
+
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    
-    [self updateMarkedCount];
+
+    if (Util.iOSVersionMajor == 5)
+        [self updateMarkedCount];
 
     if (_selectedViewIndex == 0)
         [_listController.tableView deselectRowAtIndexPath:[_listController.tableView indexPathForSelectedRow] animated:YES];
@@ -312,6 +322,10 @@ typedef enum {
             [_viewContainer addSubview:_listController.view];
             NSArray *cells = [_listController.tableView visibleCells];
             for (WordListCell *cell in cells) {
+                if (Util.iOSVersionMajor == 5) {
+                    NSIndexPath *indexPath = [_listController.tableView indexPathForCell:cell];
+                    cell.word = [_listController.fetchedResultsController objectAtIndexPath:indexPath];
+                }
                 [cell setNeedsLayout];
             }
             break;

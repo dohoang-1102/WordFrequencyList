@@ -16,8 +16,8 @@
 {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.backgroundView         = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"word-group-bg"]];
-        self.selectedBackgroundView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"word-group-bg"]];
+        self.backgroundView         = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"word-group-bg"]] autorelease];
+        self.selectedBackgroundView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"word-group-bg-selected"]] autorelease];
         
         _idLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 12, 30, 30)];
         _idLabel.backgroundColor    = [UIColor clearColor];

@@ -242,31 +242,30 @@
 
 #pragma mark - UIAlertViewDelegate
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if(buttonIndex==0){
-    if (_alertType == markAllWord) {
-        
-        sqlite3 *database;
-        NSString *dbPath = [[DataController sharedDataController] dbPath];
-        if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
-            NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=2, ZMARKDATE='%@' WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS=0",
-                             [[NSDate date] formatLongDate],
-                             _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
-            sqlite3_stmt *statement;
-            if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                sqlite3_step(statement);
+    if (buttonIndex == 0) {
+        if (_alertType == markAllWord) {
+            sqlite3 *database;
+            NSString *dbPath = [[DataController sharedDataController] dbPath];
+            if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
+                NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=2, ZMARKDATE='%@' WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS=0",
+                                 [[NSDate date] formatLongDate],
+                                 _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
+                sqlite3_stmt *statement;
+                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
+                    sqlite3_step(statement);
+                }
+                sqlite3_finalize(statement);
+            } else {
+                NSLog(@"failed open db");
             }
-            sqlite3_finalize(statement);
-        } else {
-            NSLog(@"failed open db");
+            sqlite3_close(database);
+            database = NULL;
+            
+            [[NSNotificationCenter defaultCenter] postNotificationName:HISTORY_CHANGED_NOTIFICATION object:self];
+            [[NSNotificationCenter defaultCenter] postNotificationName:BATCH_MARKED_NOTIFICATION object:self];
+            
         }
-        sqlite3_close(database);
-        database = NULL;
-        
-        [[NSNotificationCenter defaultCenter] postNotificationName:HISTORY_CHANGED_NOTIFICATION object:self];
-        [[NSNotificationCenter defaultCenter] postNotificationName:BATCH_MARKED_NOTIFICATION object:self];
-        
-    }else if(_alertType==unmarkAllWord){
-        if (buttonIndex == 0) {
+        else if (_alertType == unmarkAllWord) {
             sqlite3 *database;
             NSString *dbPath = [[DataController sharedDataController] dbPath];
             if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
@@ -281,11 +280,10 @@
             }
             sqlite3_close(database);
             database = NULL;
-        
+            
             [[NSNotificationCenter defaultCenter] postNotificationName:HISTORY_CHANGED_NOTIFICATION object:self];
             [[NSNotificationCenter defaultCenter] postNotificationName:BATCH_MARKED_NOTIFICATION object:self];
         }
-    }
     }
 }
 

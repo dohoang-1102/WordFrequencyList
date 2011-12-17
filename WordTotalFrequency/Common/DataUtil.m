@@ -114,14 +114,14 @@
 
 + (NSString *) getDateString: (NSDate *)date
 {
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    NSDateFormatter *dateFormatter = [[[NSDateFormatter alloc] init] autorelease];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
     return [dateFormatter stringFromDate:date];
 }
 
 + (NSString *) getDisplayDateString: (NSDate *)date
 {
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    NSDateFormatter *dateFormatter = [[[NSDateFormatter alloc] init] autorelease];
     [dateFormatter setDateFormat:@"yyyy年MM月dd日"];
     return [dateFormatter stringFromDate:date];
 }
