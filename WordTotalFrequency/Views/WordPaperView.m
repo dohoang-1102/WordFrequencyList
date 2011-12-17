@@ -34,8 +34,15 @@
     int tapIndex = -1;
     for (int i=0; i<4; i++)
     {
-        UILabel *label = (UILabel *)[self viewWithTag:i+1];
+        UILabel *label = (UILabel *)[self viewWithTag:(i+1)*10];
         if (CGRectContainsPoint(label.frame, point))
+        {
+            tapIndex = i;
+            break;
+        }
+        
+        UILabel *option = (UILabel *)[self viewWithTag:i+1];
+        if (CGRectContainsPoint(option.frame, point))
         {
             tapIndex = i;
             break;
@@ -46,7 +53,7 @@
     {
         if (tapIndex != _answerIndex)
         {
-            UIView *tappedView = [self  viewWithTag:tapIndex+1];
+            UIView *tappedView = [self viewWithTag:(tapIndex+1)*10];
             UIImageView *wrong = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"mark-circle-wrong"]];
             wrong.center = CGPointMake(CGRectGetMinX(tappedView.frame), CGRectGetMidY(tappedView.frame));
             CGSize size = CGSizeMake(CGRectGetWidth(wrong.bounds), CGRectGetHeight(wrong.bounds));
@@ -64,7 +71,7 @@
             [wrong release];
         }
         
-        UIView *rightView = [self  viewWithTag:_answerIndex+1];
+        UIView *rightView = [self viewWithTag:(_answerIndex+1)*10];
         UIImageView *right = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"mark-circle-right"]];
         right.center = CGPointMake(CGRectGetMinX(rightView.frame), CGRectGetMidY(rightView.frame));
         CGSize size = CGSizeMake(CGRectGetWidth(right.bounds), CGRectGetHeight(right.bounds));
@@ -145,19 +152,35 @@
         [container addGestureRecognizer:gesture];
         [gesture release];
         
-        UILabel *option;
+        UILabel *number, *option;
         int y = 77;
         for (int i=0; i<[options count]; i++) {
-            option = [[UILabel alloc] initWithFrame:CGRectMake(18, y, CGRectGetWidth(frame)-18, 30)];
+            number = [[UILabel alloc] initWithFrame:CGRectMake(18, y, 20, 30)];
+            number.tag = (i+1)*10;
+            number.font = [UIFont systemFontOfSize:27];
+            number.textAlignment = UITextAlignmentLeft;
+            number.textColor = [UIColor colorWithHex:0x0b76b4];
+            number.text = [NSString stringWithFormat:@"%d", i+1];
+            [self addSubview:number];
+            [number release];
+            
+            option = [[UILabel alloc] initWithFrame:CGRectMake(44, y, CGRectGetWidth(frame)-44, 30)];
             option.tag = i+1;
             option.font = [UIFont systemFontOfSize:17];
-            option.lineBreakMode = UILineBreakModeClip;
             option.textColor = [UIColor colorForNormalText];
-            option.text = [NSString stringWithFormat:@"%d   %@", (i+1), [options objectAtIndex:i]];
+            option.text = [options objectAtIndex:i];
+            option.numberOfLines = 0;
             [self addSubview:option];
+            
+            CGSize maximumSize = CGSizeMake(CGRectGetWidth(option.frame), 9999);
+            CGSize size = [option.text sizeWithFont:option.font constrainedToSize:maximumSize lineBreakMode:option.lineBreakMode];
+            CGRect optFrame = option.frame;
+            optFrame = CGRectMake(CGRectGetMinX(optFrame), CGRectGetMinY(optFrame), CGRectGetWidth(optFrame), size.height);
+            option.frame = optFrame;
+            
             [option release];
             
-            y += 50;
+            y += MAX(40, CGRectGetHeight(optFrame)+18);
         }
         
         UILabel *footerLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, CGRectGetHeight(frame)-20, CGRectGetWidth(frame)-5, 20)];

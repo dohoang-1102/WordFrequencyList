@@ -194,10 +194,8 @@
     
     
     
-    NSArray *files = [_word.soundFile componentsSeparatedByString:@" "];
-    NSString *file = [files objectAtIndex:0];
-    file = [[[file lastPathComponent] stringByDeletingPathExtension]
-            stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSString *file = [[_word.soundFile stringByDeletingPathExtension]
+                      stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     if (file && [file length] > 0)
     {
         NSURL *fileURL = [[NSURL alloc] initFileURLWithPath: [[NSBundle mainBundle] pathForResource:file ofType:@"mp3"]];

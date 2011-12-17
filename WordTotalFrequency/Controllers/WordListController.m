@@ -214,7 +214,7 @@ static NSPredicate *searchPredicate;
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return 44;
+    return 54;
 }
 
 // Customize the appearance of table view cells.

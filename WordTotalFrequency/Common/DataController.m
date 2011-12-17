@@ -111,7 +111,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
                                           [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 2)], @"date",
                                           nil];
                     [array addObject:dict];
-                    NSLog(@"%@", dict);
                 }
             }
             sqlite3_finalize(statement);
@@ -168,7 +167,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 	 Template code left here if you want to do this.
 	 */
 	
-	NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
 	// If the expected store doesn't exist, copy the default store.
 	if (![fileManager fileExistsAtPath:self.dbPath]) {
 		if (self.bundleDbPath) {
@@ -178,7 +177,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     else {
         [self manualMigrateDatabase];
     }
-	
+    
 	
 	//Try to automatically migrate minor changes
 	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys: [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,[NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption, nil];
@@ -188,7 +187,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:[NSURL fileURLWithPath:self.dbPath] options:options error:&error]) {
 		
 		[self handleError:error fromSource:@"Open persistant store"];
-    }    
+    }
 	
     return _persistentStoreCoordinator;
 }

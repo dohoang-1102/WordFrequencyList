@@ -26,6 +26,8 @@
     update word set detail = REPLACE(detail, ";\n", "\n") 
 4. tags
     update word set tags = CONCAT(tags, 'cet4,') where LOCATE('cet4', tags)=0 and spell in (select spell from cet4)
+5. soundFile
+    update word set soundFile = REVERSE(left(REVERSE(soundFile), instr(REVERSE(soundFile), '/')-1))
 
 
 *** to clean .git

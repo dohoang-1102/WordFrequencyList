@@ -28,11 +28,13 @@
         self.selectedBackgroundView.backgroundColor = [UIColor colorWithRed:148.0/255 green:199.0/255 blue:231.0/255 alpha:1.0];
 
         _markIcon = [[UIButton buttonWithType:UIButtonTypeCustom] retain];
+        _markIcon.autoresizingMask = UIViewAutoresizingFlexibleHeight;
         _markIcon.frame = CGRectMake(0, 0, 30, CGRectGetHeight(rect));
         _markIcon.userInteractionEnabled = NO;
         [self addSubview:_markIcon];
         
         _spell = [[UILabel alloc] initWithFrame:CGRectMake(30, 0, 114, CGRectGetHeight(rect))];
+        _spell.autoresizingMask = UIViewAutoresizingFlexibleHeight;
         _spell.backgroundColor = [UIColor clearColor];
         _spell.adjustsFontSizeToFitWidth = YES;
         _spell.textColor = [UIColor colorForNormalText];
@@ -42,10 +44,11 @@
         [self addSubview:_spell];
         
         _translate = [[UILabel alloc] initWithFrame:CGRectMake(144, 0, CGRectGetWidth(rect)-144, CGRectGetHeight(rect))];
+        _translate.autoresizingMask = UIViewAutoresizingFlexibleHeight;
         _translate.backgroundColor = [UIColor clearColor];
-        _translate.adjustsFontSizeToFitWidth = NO;
+        _translate.numberOfLines = 0;
         _translate.textColor = [UIColor colorForNormalText];
-        _translate.font = [UIFont systemFontOfSize:18];
+        _translate.font = [UIFont systemFontOfSize:16];
         _translate.shadowColor = [UIColor whiteColor];
         _translate.shadowOffset = CGSizeMake(.5, 1);
         [self addSubview:_translate];
@@ -80,7 +83,6 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
     if ([_word.markStatus intValue] > 0){
         UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", [_word.markStatus intValue]]];
         [_markIcon setImage:image forState:UIControlStateNormal];
