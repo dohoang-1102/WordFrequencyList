@@ -36,11 +36,10 @@ static NSUInteger kNumberOfPages = 6;
     if ((self = [super init]))
     {
         _displayType = displayType;
-        if (_displayType==firstLoad) {
-            NSLog(@"initWithDisplayType firstLoad");
+        if (_displayType == firstLoad) {
             kNumberOfPages  = 6;
-        }else if(_displayType==normalLoad){
-            NSLog(@"initWithDisplayType normal");
+        }
+        else if (_displayType == normalLoad){
             kNumberOfPages  = 5;
         }
     }
@@ -94,18 +93,13 @@ static NSUInteger kNumberOfPages = 6;
     [self loadScrollViewWithPage:0];
     [self loadScrollViewWithPage:1];
     
-    if (_displayType==firstLoad) {
+    if (_displayType == firstLoad) {
         _closeButton        = [[UIButton buttonWithType:UIButtonTypeCustom] retain];
-        _closeButton.frame  = CGRectMake((kNumberOfPages-1)*320+65, 160, 120, 120);
+        _closeButton.frame  = CGRectMake((kNumberOfPages-1)*320+62, 158, 105, 105);
+        _closeButton.showsTouchWhenHighlighted = YES;
+        [_closeButton setImage:[UIImage imageNamed:@"Icon@2x.png"] forState:UIControlStateNormal];
         [_closeButton addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
         [_scrollView addSubview:_closeButton];
-    }else if(_displayType==normalLoad){
-    // back button
-        _closeButton        = [[UIButton buttonWithType:UIButtonTypeCustom] retain];
-        _closeButton.frame  = CGRectMake(280, -1, 44, 44);
-        [_closeButton setImage:[UIImage imageNamed:@"close-btn"] forState:UIControlStateNormal];
-        [_closeButton addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:_closeButton];
     }
 }
 
@@ -117,10 +111,10 @@ static NSUInteger kNumberOfPages = 6;
         return;
     
     // replace the placeholder if necessary
-    UIImageView *imageView = [_pageImages objectAtIndex:page];
+    UIView *imageView = [_pageImages objectAtIndex:page];
     if ((NSNull *)imageView == [NSNull null])
     {
-        imageView = [[UIImageView alloc] initWithFrame:self.view.bounds];
+        imageView = [[UIView alloc] initWithFrame:self.view.bounds];
         [_pageImages replaceObjectAtIndex:page withObject:imageView];
         [imageView release];
     }
@@ -132,9 +126,18 @@ static NSUInteger kNumberOfPages = 6;
         frame.origin.x = frame.size.width * page;
         frame.origin.y = 0;
         imageView.frame = frame;
-        [_scrollView addSubview:imageView];
+        [_scrollView insertSubview:imageView atIndex:0];
         
-        imageView.image = [UIImage imageNamed:[NSString stringWithFormat:@"info%d", page]];
+        imageView.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:[NSString stringWithFormat:@"info%d", page]]];
+        
+        if (_displayType == normalLoad) {
+            UIButton *close = [UIButton buttonWithType:UIButtonTypeCustom];
+            close.frame = CGRectMake(280, -1, 44, 44);
+            close.showsTouchWhenHighlighted = YES;
+            [close setImage:[UIImage imageNamed:@"close-btn"] forState:UIControlStateNormal];
+            [close addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
+            [imageView addSubview:close];
+        }
     }
 }
 
