@@ -175,7 +175,8 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 		}
 	}
     else {
-        [self manualMigrateDatabase];
+        // disable manual migrate due to app rejected
+        //[self manualMigrateDatabase];
     }
     
 	

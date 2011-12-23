@@ -98,6 +98,7 @@ static NSUInteger kNumberOfPages = 6;
         _closeButton.frame  = CGRectMake((kNumberOfPages-1)*320+62, 158, 105, 105);
         _closeButton.showsTouchWhenHighlighted = YES;
         [_closeButton setImage:[UIImage imageNamed:@"Icon@2x.png"] forState:UIControlStateNormal];
+        [_closeButton setImage:[UIImage imageNamed:@"Icon@2x-pressed.png"] forState:UIControlStateHighlighted];
         [_closeButton addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
         [_scrollView addSubview:_closeButton];
     }
