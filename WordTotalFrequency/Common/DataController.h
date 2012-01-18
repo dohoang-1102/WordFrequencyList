@@ -27,8 +27,8 @@
 @property (nonatomic, retain) NSManagedObjectModel *managedObjectModel;
 
 @property (nonatomic, readonly) NSDictionary *settingsDictionary;
-@property (nonatomic, readonly) NSString *dbPath;
 @property (nonatomic, readonly) NSString *bundleDbPath;
+@property (nonatomic, readonly) NSString *docHistoryPath;
 @property (nonatomic, getter = isNoticationOn) BOOL notificationOn;
 @property (nonatomic, getter = isDetailPageAutoSpeakOn) BOOL detailPageAutoSpeakOn;
 

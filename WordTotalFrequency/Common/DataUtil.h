@@ -13,6 +13,7 @@
 
 + (NSArray *)readArrayFromFile: (NSString *)fileName;
 + (NSDictionary *)readDictionaryFromFile: (NSString *)fileName;
++ (NSDictionary *)readDictionaryFromBundleFile: (NSString *)fileName;
 + (NSArray *)readArrayFromDataFile: (NSString *)fileName;
 + (BOOL) writeArray: (NSArray *)array toDataFile: (NSString *)fileName;
 + (BOOL)writeDictionary: (NSDictionary *)dictionary toDataFile: (NSString *)fileName;

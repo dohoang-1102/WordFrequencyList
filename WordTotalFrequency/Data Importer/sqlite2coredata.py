@@ -48,19 +48,19 @@ for row in inCursor:
 	# Create ZWORD entry
 	vals = []
 	vals.append(count+1)                                    # Z_PK	row[0]
-	vals.append(1)                                          # Z_ENT
+	vals.append(2)                                          # Z_ENT
 	vals.append(1)                                          # Z_OPT
-	vals.append(0)                                          # ZMARKSTATUS
-	vals.append(row[2])                                     # ZRANK
 	vals.append(getCategoryId(count))                       # ZCATEGORY	row[11]
 	vals.append(getGroupId(getCategoryId(count), count))    # ZGROUP
-	vals.append(row[3])                                     # ZTRANSLATE
-	vals.append("")                                         # ZMARKDATE
-	vals.append(row[1])                                     # ZSPELL
-	vals.append(row[5])                                     # ZPHONETIC
+	vals.append(0)                                          # ZMARKSTATUS
+	vals.append(row[2])                                     # ZRANK
 	vals.append(row[4])                                     # ZDETAIL
+	vals.append("")                                         # ZMARKDATE
+	vals.append(row[5])                                     # ZPHONETIC
 	vals.append(row[6])                                     # ZSOUNDFILE
+	vals.append(row[1])                                     # ZSPELL
 	vals.append(row[7])                                     # ZTAGS
+	vals.append(row[3])                                     # ZTRANSLATE
 	outConn.execute("insert into ZWORD values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", vals)
     
     

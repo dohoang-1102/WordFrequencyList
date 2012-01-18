@@ -47,6 +47,19 @@
 							errorDescription:&errorDesc];
 }
 
++ (NSDictionary *)readDictionaryFromBundleFile: (NSString *)fileName
+{
+	NSString *errorDesc = nil;
+	NSPropertyListFormat format;
+	NSString *plistPath = [[NSBundle mainBundle] pathForResource:fileName ofType:@"plist"];
+	NSData *plistXML = [[NSFileManager defaultManager] contentsAtPath:plistPath];
+	return (NSDictionary *)[NSPropertyListSerialization
+                            propertyListFromData:plistXML
+							mutabilityOption:NSPropertyListMutableContainersAndLeaves
+                            format:&format
+							errorDescription:&errorDesc];
+}
+
 + (BOOL)writeArray: (NSArray *)array toDataFile: (NSString *)fileName
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
