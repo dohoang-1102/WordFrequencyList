@@ -75,7 +75,10 @@ static NSPredicate *searchPredicate;
              setPredicate:[NSPredicate predicateWithFormat:@"category = %d and group = %d", _wordSetIndex, _wordGroupIndex]];
         else
             [self.fetchedResultsController.fetchRequest
-             setPredicate:[NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus > 0", _wordSetIndex, _wordGroupIndex]];
+             setPredicate:[NSPredicate predicateWithFormat:@"category = %d and group = %d and spell in %@",
+                           _wordSetIndex,
+                           _wordGroupIndex,
+                           [[DataController sharedDataController] getMarkedWordsByCategory:_wordSetIndex AndGroup:_wordGroupIndex]]];
     }
     else
     {
@@ -98,7 +101,7 @@ static NSPredicate *searchPredicate;
                 NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
                 exit(-1);  // Fail
             }
-            
+
             dispatch_sync(main_queue, ^{
                 [blockSelf.tableView reloadData];
                 
@@ -275,11 +278,11 @@ static NSPredicate *searchPredicate;
         [descriptor release];
     }
     else{
-        NSSortDescriptor *descriptor = [[NSSortDescriptor alloc] initWithKey:@"markDate" ascending:NO];
+        NSSortDescriptor *descriptor = [[NSSortDescriptor alloc] initWithKey:@"rank" ascending:NO];
         [fetchRequest setSortDescriptors:[NSArray arrayWithObject:descriptor]];
         [descriptor release];
     }
-    NSArray *propertiesToFetch = [[NSArray alloc] initWithObjects:@"markStatus", @"spell", @"translate", nil];
+    NSArray *propertiesToFetch = [[NSArray alloc] initWithObjects:@"spell", @"translate", nil];
     [fetchRequest setPropertiesToFetch:propertiesToFetch];
     [propertiesToFetch release];
 
@@ -297,6 +300,7 @@ static NSPredicate *searchPredicate;
 	// Memory management.
 	[aFetchedResultsController release];
 	[fetchRequest release];
+    
 	return _fetchedResultsController;
 }
 

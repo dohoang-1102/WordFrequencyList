@@ -91,13 +91,9 @@
         totalOfAllSets += total;
 
         // marked count
-        predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 1", set.categoryId];
-        [self.fetchRequest setPredicate:predicate];
-        set.intermediateMarkedWordCount = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
+        set.intermediateMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:set.categoryId AndStatus:0];
         
-        predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 2", set.categoryId];
-        [self.fetchRequest setPredicate:predicate];
-        set.completeMarkedWordCount = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
+        set.completeMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:set.categoryId AndStatus:1];
         
         
         UnitIconView *icon = [_unitIcons objectAtIndex:set.categoryId];

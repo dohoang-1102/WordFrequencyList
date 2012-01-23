@@ -24,7 +24,8 @@
 
 - (void)updateMark
 {
-    UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", [_word.markStatus intValue]]];
+    int status = [[DataController sharedDataController] getMarkStatusBySpell:_word.spell];
+    UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", status]];
     [(UIButton *)[self viewWithTag:MARK_ICON_TAG] setBackgroundImage:image forState:UIControlStateNormal];
 }
 
@@ -91,7 +92,7 @@
         [gestureRecognizer.view removeGestureRecognizer:gestureRecognizer];
         
         // update mark status
-        int currentStatus = [_word.markStatus intValue];
+        int currentStatus = [[DataController sharedDataController] getMarkStatusBySpell:_word.spell];
         if (tapIndex == _answerIndex){
             if (currentStatus < 2){
                 [[DataController sharedDataController] markWord:_word status:currentStatus+1];

@@ -86,15 +86,16 @@ typedef enum {
 
 - (void)updateMarkOnSegmented
 {
-    NSString *imageName = [NSString stringWithFormat:@"mark-circle-%d", [self.word.markStatus intValue]];
+    int status = [[DataController sharedDataController] getMarkStatusBySpell:self.word.spell];
+    NSString *imageName = [NSString stringWithFormat:@"mark-circle-%d", status];
     UIImageView *image = (UIImageView *)[self.view viewWithTag:kSegmentMarkTag];
     image.image = [UIImage imageNamed:imageName];
     UILabel *label = (UILabel *)[self.view viewWithTag:kSegmentLabelTag];
-    if(self.word.markStatus==[NSNumber numberWithInt:0]){
+    if(status == 0){
         label.text = @"标记为“熟悉”";
-    }else if(self.word.markStatus==[NSNumber numberWithInt:1]){
+    }else if(status == 1){
         label.text = @"标记为“记住”";
-    }else if(self.word.markStatus==[NSNumber numberWithInt:2]){
+    }else if(status == 2){
         label.text = @"清除标记";
     }
     
@@ -355,7 +356,8 @@ typedef enum {
     }
     else
     {
-        NSString *imageName = [NSString stringWithFormat:@"mark-circle-%d", [self.word.markStatus intValue]];
+        int status = [[DataController sharedDataController] getMarkStatusBySpell:self.word.spell];
+        NSString *imageName = [NSString stringWithFormat:@"mark-circle-%d", status];
         UIImageView *image = [[UIImageView alloc] initWithImage:[UIImage imageNamed:imageName]];
         image.tag = kSegmentMarkTag;
         label.tag = kSegmentLabelTag;

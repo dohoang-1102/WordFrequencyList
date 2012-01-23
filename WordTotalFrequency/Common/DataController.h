@@ -12,6 +12,9 @@
 
 #import "NSManagedObjectContext+insert.h"
 #import "Word.h"
+#import "FMDatabase.h"
+#import "FMDatabaseAdditions.h"
+
 
 #define MANAGED_OBJECT_CONTEXT [[DataController sharedDataController] managedObjectContext]
 #define SQL_DATABASE_NAME @"WordFrequencyList"
@@ -20,11 +23,14 @@
     NSManagedObjectModel *_managedObjectModel;
     NSManagedObjectContext *_managedObjectContext;	    
     NSPersistentStoreCoordinator *_persistentStoreCoordinator;
+    
+    FMDatabase *_historyDatabase;
 }
 
 @property (nonatomic, retain) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 @property (nonatomic, retain) NSManagedObjectContext *managedObjectContext;
 @property (nonatomic, retain) NSManagedObjectModel *managedObjectModel;
+@property (nonatomic, retain) FMDatabase *historyDatabase;
 
 @property (nonatomic, readonly) NSDictionary *settingsDictionary;
 @property (nonatomic, readonly) NSString *bundleDbPath;
@@ -56,7 +62,7 @@
 
 - (void)markWord:(Word *)word status:(NSUInteger)status;
 
-- (void)markWordToNextLevel:(Word *)word;
+- (int)markWordToNextLevel:(Word *)word;
 
 - (NSDictionary *)dictionaryForCategoryId:(NSUInteger)categoryId;
 
@@ -65,5 +71,11 @@
 - (void)scheduleNextWord;
 
 - (void)incrementAppLoadedTimes;
+
+- (int)getMarkStatusBySpell:(NSString *)spell;
+- (int)getMarkCountByCategory:(NSUInteger)category AndStatus:(NSUInteger)status;
+- (int)getMarkCountByCategory:(NSUInteger)category AndGroup:(NSUInteger)group AndStatus:(NSUInteger)status;
+- (NSArray *)getMarkedWordsByCategory:(NSUInteger)category AndGroup:(NSUInteger)group;
+- (NSSet *)getUnmarkedWordsByCategory:(NSUInteger)category AndGroup:(NSUInteger)group;
 
 @end

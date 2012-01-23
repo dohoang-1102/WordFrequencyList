@@ -13,7 +13,7 @@
 #import "DataUtil.h"
 #import "NSDate+Ext.h"
 #import "Constant.h"
-#import "History.h"
+#import "FMDatabase.h"
 #import <sqlite3.h>
 
 @interface SettingsView ()
@@ -27,7 +27,7 @@
 
 @synthesize wordSetController = _wordSetController;
 
-#define BTN_CLEAN_HISTORY 1;
+#define TAG_TEST_MARK_TOGGLE 99
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -119,8 +119,7 @@
         [label release];
         
         UISwitch *toggle = [[UISwitch alloc] initWithFrame:CGRectMake(210, 188, 94, 30)];
-        NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSetController.wordGroup.categoryId];
-        toggle.on = [[dict valueForKey:@"testMarked"] boolValue];
+        toggle.tag = TAG_TEST_MARK_TOGGLE;
         [toggle addTarget:self action:@selector(toggleMarkedOnly:) forControlEvents:UIControlEventValueChanged];
         [self addSubview:toggle];
         [toggle release];
@@ -182,6 +181,10 @@
 - (void)setWordSetController:(WordSetController *)wordSetController
 {
     _wordSetController = wordSetController;
+    
+    NSDictionary *dict = [[DataController sharedDataController] dictionaryForCategoryId:_wordSetController.wordGroup.categoryId];
+    UISwitch *toggle = (UISwitch *)[self viewWithTag:TAG_TEST_MARK_TOGGLE];
+    toggle.on = [[dict valueForKey:@"testMarked"] boolValue];
 }
 
 #pragma mark - private message
@@ -245,101 +248,67 @@
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     if (buttonIndex == 0) {
         if (_alertType == markAllWord) {
-            sqlite3 *database;
-            sqlite3_stmt *statement;
-            NSString *sql;
-            NSString *markDate = [[NSDate date] formatLongDate];
-            
-            // prepare array for history db
+            NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
             NSMutableArray *array = [[NSMutableArray alloc] init];
-            if (sqlite3_open([[DataController sharedDataController].bundleDbPath UTF8String], &database) == SQLITE_OK) {
-                sql = [NSString stringWithFormat:@"SELECT ZSPELL FROM ZWORD WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS=0", _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
-                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                    while (sqlite3_step(statement) == SQLITE_ROW) {
-                        [array addObject:[NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)]];
+            FMDatabase *db = [FMDatabase databaseWithPath:[DataController sharedDataController].bundleDbPath];
+            [db open];
+            FMResultSet *rs = [db executeQuery:@"SELECT ZSPELL FROM ZWORD WHERE ZCATEGORY = ? AND ZGROUP = ?",
+                               [NSNumber numberWithInt:_wordSetController.wordGroup.categoryId],
+                               [NSNumber numberWithInt:_wordSetController.wordGroup.groupId]];
+            while ([rs next]) {
+                [array addObject:[rs stringForColumnIndex:0]];
+            }
+            [rs close];
+            [db close];
+            
+            // insert mark history from array into history table
+            db = [FMDatabase databaseWithPath:[DataController sharedDataController].docHistoryPath];
+            if (![db open]){
+                [pool release];
+                [array release];
+                return;
+            }
+            
+            NSString *date = [[NSDate date] formatLongDate];
+            [db beginTransaction];
+            for (NSString *spell in array) {
+                // check existing
+                rs = [db executeQuery:@"SELECT COUNT(*) FROM history WHERE spell = ?", spell];
+                if ([rs next]){
+                    int count = [rs intForColumnIndex:0];
+                    if (count > 0){
+                        [rs close];
+                        continue;
                     }
                 }
-                sqlite3_finalize(statement);
+                [rs close];
+                [db executeUpdate:@"INSERT INTO history VALUES (?, ?, ?, ?, ?)",
+                 spell,
+                 [NSNumber numberWithInt:1],
+                 date,
+                 [NSNumber numberWithInt:_wordSetController.wordGroup.categoryId],
+                 [NSNumber numberWithInt:_wordSetController.wordGroup.groupId]];
             }
-            
-            // update word table
-            NSString *dbPath = [DataController sharedDataController].bundleDbPath;
-            if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
-                sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=2, ZMARKDATE='%@' WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS=0",
-                                 markDate,
-                                 _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
-                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                    sqlite3_step(statement);
-                }
-                sqlite3_finalize(statement);
-            } else {
-                NSLog(@"failed open db");
-            }
-            sqlite3_close(database);
-            database = NULL;
-            
-            // update history table
-            for (NSString *spell in array) {
-                History *history = [NSEntityDescription insertNewObjectForEntityForName:@"History" inManagedObjectContext:[DataController sharedDataController].managedObjectContext];
-                history.spell = spell;
-                history.markComplete = [NSNumber numberWithBool:YES];
-                history.markDate = markDate;
-            }
-            [[DataController sharedDataController] saveFromSource:@"mark all word"];
+            [db commit];
+            [db close];
             
             [array release];
-            
+            [pool release];
+                        
             [[NSNotificationCenter defaultCenter] postNotificationName:HISTORY_CHANGED_NOTIFICATION object:self];
             [[NSNotificationCenter defaultCenter] postNotificationName:BATCH_MARKED_NOTIFICATION object:self];
             
         }
         else if (_alertType == unmarkAllWord) {
-            sqlite3 *database;
-            sqlite3_stmt *statement;
-            NSString *sql;
+            NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+            FMDatabase *db = [FMDatabase databaseWithPath:[DataController sharedDataController].docHistoryPath];
+            [db open];
+            [db executeUpdate:@"DELETE FROM history WHERE categoryId = ? AND groupId = ?",
+             [NSNumber numberWithInt:_wordSetController.wordGroup.categoryId],
+             [NSNumber numberWithInt:_wordSetController.wordGroup.groupId]];
             
-            // prepare array for history db
-            NSMutableArray *array = [[NSMutableArray alloc] init];
-            if (sqlite3_open([[DataController sharedDataController].bundleDbPath UTF8String], &database) == SQLITE_OK) {
-                sql = [NSString stringWithFormat:@"SELECT ZSPELL FROM ZWORD WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS>0", _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
-                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                    while (sqlite3_step(statement) == SQLITE_ROW) {
-                        [array addObject:[NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)]];
-                    }
-                }
-                sqlite3_finalize(statement);
-            }
-            
-            // update word table
-            NSString *dbPath = [DataController sharedDataController].bundleDbPath;
-            if (sqlite3_open([dbPath UTF8String], &database) == SQLITE_OK) {
-                NSString *sql = [NSString stringWithFormat:@"UPDATE ZWORD SET ZMARKSTATUS=0, ZMARKDATE='' WHERE ZCATEGORY=%d AND ZGROUP=%d AND ZMARKSTATUS>0", _wordSetController.wordGroup.categoryId, _wordSetController.wordGroup.groupId];
-                sqlite3_stmt *statement;
-                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                    sqlite3_step(statement);
-                }
-                sqlite3_finalize(statement);
-            } else {
-                NSLog(@"failed open db");
-            }
-            sqlite3_close(database);
-            database = NULL;
-            
-            // update history table
-            if (sqlite3_open([[DataController sharedDataController].docHistoryPath UTF8String], &database) == SQLITE_OK){
-                sql = @"DELETE FROM ZHISTORY WHERE ZSPELL='%@'";
-                for (NSString *spell in array){
-                    NSString *query = [NSString stringWithFormat:sql, spell];
-                    if (sqlite3_prepare_v2(database, [query UTF8String], -1, &statement, NULL) == SQLITE_OK){
-                        sqlite3_step(statement);
-                    }
-                    sqlite3_finalize(statement);
-                }
-            }
-            sqlite3_close(database);
-            database = NULL;
-            
-            [array release];
+            [db close];
+            [pool release];
             
             [[NSNotificationCenter defaultCenter] postNotificationName:HISTORY_CHANGED_NOTIFICATION object:self];
             [[NSNotificationCenter defaultCenter] postNotificationName:BATCH_MARKED_NOTIFICATION object:self];

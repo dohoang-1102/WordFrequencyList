@@ -83,8 +83,9 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    if ([_word.markStatus intValue] > 0){
-        UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", [_word.markStatus intValue]]];
+    int status = [[DataController sharedDataController] getMarkStatusBySpell:_word.spell];
+    if (status > 0){
+        UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", status]];
         [_markIcon setImage:image forState:UIControlStateNormal];
     }
     else

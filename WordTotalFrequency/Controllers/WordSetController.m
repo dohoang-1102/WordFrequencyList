@@ -54,7 +54,10 @@ typedef enum {
             NSEntityDescription *entity = [NSEntityDescription entityForName:@"Word"
                                                       inManagedObjectContext:[DataController sharedDataController].managedObjectContext];
             [_fetchTestingRequest setEntity:entity];
-            [_fetchTestingRequest setPredicate:[NSPredicate predicateWithFormat:@"category = %d  and group = %d and markStatus = 0", _wordGroup.categoryId, _wordGroup.groupId]];
+            [_fetchTestingRequest setPredicate:[NSPredicate predicateWithFormat:@"category = %d  and group = %d and spell in %@",
+                                                _wordGroup.categoryId,
+                                                _wordGroup.groupId,
+                                                [[DataController sharedDataController] getUnmarkedWordsByCategory:_wordGroup.categoryId AndGroup:_wordGroup.groupId]]];
             
             NSError *error = nil;
             NSAutoreleasePool *ap = [[NSAutoreleasePool alloc] init];
@@ -111,19 +114,12 @@ typedef enum {
 
 - (void)updateMarkedCount
 {
-    NSPredicate *predicate;
-    NSError *error;
-    NSUInteger count;
-
-    predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 1", _wordGroup.categoryId, _wordGroup.groupId];
-    [self.fetchRequest setPredicate:predicate];
-    count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-    _wordGroup.intermediateMarkedWordCount = count;
-    
-    predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 2", _wordGroup.categoryId, _wordGroup.groupId];
-    [self.fetchRequest setPredicate:predicate];
-    count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-    _wordGroup.completeMarkedWordCount = count;
+    _wordGroup.intermediateMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:_wordGroup.categoryId
+                                                                                                  AndGroup:_wordGroup.groupId
+                                                                                                 AndStatus:0];
+    _wordGroup.completeMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:_wordGroup.categoryId
+                                                                                              AndGroup:_wordGroup.groupId
+                                                                                             AndStatus:1];
 
     // update control
     [(UILabel *)[self.view viewWithTag:PERCENT_LABEL_TAG] setText:[NSString stringWithFormat:@"%d / %d", _wordGroup.markedWordCount, _wordGroup.totalWordCount]];

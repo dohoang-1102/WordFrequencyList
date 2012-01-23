@@ -26,8 +26,8 @@
 
 - (void)markAction:(UIGestureRecognizer *)gestureRecognizer
 {
-    [[DataController sharedDataController] markWordToNextLevel:_word];
-    UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", [self.word.markStatus intValue]]];
+    int status = [[DataController sharedDataController] markWordToNextLevel:_word];
+    UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", status]];
     [(UIButton *)[self viewWithTag:MARK_ICON_TAG] setBackgroundImage:image forState:UIControlStateNormal];
     [_wordDetailController updateMarkOnSegmented];
     [_wordDetailController setHistoryListDirty:YES];
@@ -141,7 +141,8 @@
 
 - (void)updateWordData
 {
-    UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", [_word.markStatus intValue]]];
+    int status = [[DataController sharedDataController] getMarkStatusBySpell:_word.spell];
+    UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"mark-circle-%d", status]];
     [(UIButton *)[self viewWithTag:MARK_ICON_TAG] setBackgroundImage:image forState:UIControlStateNormal];
     
     [(UILabel *)[self viewWithTag:SPELL_LABEL_TAG] setText:_word.spell];

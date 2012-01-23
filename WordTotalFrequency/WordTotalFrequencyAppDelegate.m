@@ -58,6 +58,8 @@
     if ([[[DataController sharedDataController] managedObjectContext] hasChanges]) {
 		[[DataController sharedDataController] saveFromSource:@"application will terminate"];
 	}
+    [[DataController sharedDataController].historyDatabase close];
+    [[DataController sharedDataController].historyDatabase release];
     
     // local notification
     [[UIApplication sharedApplication] cancelAllLocalNotifications];

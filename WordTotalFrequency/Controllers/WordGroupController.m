@@ -34,19 +34,9 @@
 
 - (void)updateMarkedCount
 {
-    NSPredicate *predicate;
-    NSError *error;
-    NSUInteger count;
+    _wordSet.intermediateMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:_wordSet.categoryId AndStatus:0];;
     
-    predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 1", _wordSet.categoryId];
-    [self.fetchRequest setPredicate:predicate];
-    count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-    _wordSet.intermediateMarkedWordCount = count;
-    
-    predicate = [NSPredicate predicateWithFormat:@"category = %d and markStatus = 2", _wordSet.categoryId];
-    [self.fetchRequest setPredicate:predicate];
-    count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-    _wordSet.completeMarkedWordCount = count;
+    _wordSet.completeMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:_wordSet.categoryId AndStatus:1];
     
     // update control
     [(UILabel *)[self.view viewWithTag:PERCENT_LABEL_TAG] setText:[NSString stringWithFormat:@"%d / %d", _wordSet.markedWordCount, _wordSet.totalWordCount]];
@@ -55,15 +45,13 @@
     
     // update percent for groups
     for (WordGroup *wordGroup in self.groups) {
-        predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 1", wordGroup.categoryId, wordGroup.groupId];
-        [self.fetchRequest setPredicate:predicate];
-        count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-        wordGroup.intermediateMarkedWordCount = count;
+        wordGroup.intermediateMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:wordGroup.categoryId
+                                                                                                     AndGroup:wordGroup.groupId
+                                                                                                    AndStatus:0];
         
-        predicate = [NSPredicate predicateWithFormat:@"category = %d and group = %d and markStatus = 2", wordGroup.categoryId, wordGroup.groupId];
-        [self.fetchRequest setPredicate:predicate];
-        count = [[DataController sharedDataController].managedObjectContext countForFetchRequest:self.fetchRequest error:&error];
-        wordGroup.completeMarkedWordCount = count;
+        wordGroup.completeMarkedWordCount = [[DataController sharedDataController] getMarkCountByCategory:wordGroup.categoryId
+                                                                                                 AndGroup:wordGroup.groupId
+                                                                                                AndStatus:1];
     }
 }
 

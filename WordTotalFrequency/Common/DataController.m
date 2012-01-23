@@ -13,7 +13,6 @@
 #import "NSDate+Ext.h"
 #import "DataUtil.h"
 #import "Constant.h"
-#import "History.h"
 #import <sqlite3.h>
 
 @implementation DataController
@@ -23,6 +22,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 @synthesize persistentStoreCoordinator = _persistentStoreCoordinator;
 @synthesize managedObjectContext = _managedObjectContext;
 @synthesize managedObjectModel = _managedObjectModel;
+@synthesize historyDatabase = _historyDatabase;
 @synthesize notificationOn;
 
 #pragma mark -
@@ -61,6 +61,38 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     return _managedObjectModel;
 }
 
+- (FMDatabase *)historyDatabase{
+    if (_historyDatabase != nil)
+        return _historyDatabase;
+    
+    _historyDatabase = [[FMDatabase databaseWithPath:self.docHistoryPath] retain];
+    [_historyDatabase open];
+    return _historyDatabase;
+}
+
+- (void)checkHistoryDatabase
+{
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if (![fileManager fileExistsAtPath:self.docHistoryPath]){
+        NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+        
+        FMDatabase *db = [FMDatabase databaseWithPath:self.docHistoryPath];
+        if (![db open]){
+            [pool release];
+            return;
+        }
+        
+        [db executeUpdate:@"CREATE TABLE history (spell VARCHAR(255) PRIMARY KEY, markComplete INTEGER, markDate VARCHAR(255), categoryId INTEGER, groupId INTEGER)"];
+        [db executeUpdate:@"CREATE INDEX history_spell_index ON history (spell)"];
+        [db executeUpdate:@"CREATE INDEX history_markDate_index ON history (markDate)"];
+        [db executeUpdate:@"CREATE INDEX history_categoryId_index ON history (categoryId)"];
+        [db executeUpdate:@"CREATE INDEX history_groupId_index ON history (groupId)"];
+        [db close];
+        
+        [pool release];
+    }
+}
+
 - (void)migrateObsoleteDatabase
 {
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -70,89 +102,54 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 		return;
 	}
     
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     
-    sqlite3 *database;
-    NSString *sql;
-    // get marked history
-    NSMutableArray *array = [[NSMutableArray alloc] init];
-    if (sqlite3_open([dbInDoc UTF8String], &database) == SQLITE_OK) {
-        sqlite3_stmt *statement;
-        sql = @"SELECT ZSPELL, ZMARKSTATUS, ZMARKDATE FROM ZWORD WHERE ZMARKDATE <> ''";
-        if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-            while (sqlite3_step(statement) == SQLITE_ROW) {
-                NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)], @"spell",
-                                      [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 1)], @"mark",
-                                      [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 2)], @"date",
-                                      nil];
-                [array addObject:dict];
-            }
-        }
-        sqlite3_finalize(statement);
-    } else {
-        NSLog(@"failed open db");
+    // get mark history from obsolete word table, store in array
+    FMDatabase *db = [FMDatabase databaseWithPath:dbInDoc];
+    if (![db open]){
+        [pool release];
+        return;
     }
-    sqlite3_close(database);
-    database = NULL;
+    
+    NSMutableArray *array = [[NSMutableArray alloc] init];
+    FMResultSet *rs = [db executeQuery:@"SELECT ZSPELL, ZMARKSTATUS, ZMARKDATE, ZCATEGORY, ZGROUP FROM ZWORD WHERE ZMARKDATE <> ''"];
+    while ([rs next]) {
+        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                              [rs stringForColumn:@"ZSPELL"], @"spell",
+                              [NSNumber numberWithInt:[rs intForColumn:@"ZMARKSTATUS"]-1], @"markComplete",
+                              [rs stringForColumn:@"ZMARKDATE"], @"markDate",
+                              [NSNumber numberWithInt:[rs intForColumn:@"ZCATEGORY"]], @"category",
+                              [NSNumber numberWithInt:[rs intForColumn:@"ZGROUP"]], @"group", nil];
+        [array addObject:dict];
+    }
+    [rs close];
+    [db close];
     
     // remove document db
     [fileManager removeItemAtPath:dbInDoc error:NULL];
     
-    // update marked history
+    // insert mark history from array into history table
+    db = [FMDatabase databaseWithPath:self.docHistoryPath];
+    if (![db open]){
+        [pool release];
+        [array release];
+        return;
+    }
+    
+    [db beginTransaction];
     for (NSDictionary *dict in array) {
-        History *history = [NSEntityDescription insertNewObjectForEntityForName:@"History" inManagedObjectContext:self.managedObjectContext];
-        history.spell = [dict objectForKey:@"spell"];
-        history.markComplete = [NSNumber numberWithBool:[[dict objectForKey:@"mark"] isEqualToString:@"2"]];
-        history.markDate = [dict objectForKey:@"date"];
+        [db executeUpdate:@"INSERT INTO history VALUES (?, ?, ?, ?, ?)",
+         [dict objectForKey:@"spell"],
+         [dict objectForKey:@"markComplete"],
+         [dict objectForKey:@"markDate"],
+         [dict objectForKey:@"category"],
+         [dict objectForKey:@"group"]];
     }
-    [self saveFromSource:@"save history data from obsolete WordFrequencyList.sqlite"];
-        
-    [array release];
-}
-
-- (void)migrateHistoryDatabase
-{
-    sqlite3 *database;
-    NSString *sql;
-    sqlite3_stmt *statement;
-    
-    // get marked history
-    NSMutableArray *array = [[NSMutableArray alloc] init];
-    if (sqlite3_open([self.docHistoryPath UTF8String], &database) == SQLITE_OK) {
-        sql = @"SELECT ZSPELL, ZMARKCOMPLETE, ZMARKDATE FROM ZHISTORY";
-        if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-            while (sqlite3_step(statement) == SQLITE_ROW) {
-                NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)], @"spell",
-                                      [NSNumber numberWithInt:sqlite3_column_int(statement, 1)+1], @"mark",
-                                      [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 2)], @"date",
-                                      nil];
-                [array addObject:dict];
-            }
-        }
-        sqlite3_finalize(statement);
-    } else {
-        NSLog(@"failed open db");
-    }
-    sqlite3_close(database);
-    database = NULL;
-    
-    // update bundled database
-    if (sqlite3_open([self.bundleDbPath UTF8String], &database) == SQLITE_OK){
-        sql = @"UPDATE ZWORD SET ZMARKSTATUS=%d, ZMARKDATE='%@' WHERE ZSPELL='%@'";
-        for (NSDictionary *dict in array){
-            NSString *query = [NSString stringWithFormat:sql,
-                               [[dict objectForKey:@"mark"] intValue],
-                               [dict objectForKey:@"date"],
-                               [dict objectForKey:@"spell"]];
-            if (sqlite3_prepare_v2(database, [query UTF8String], -1, &statement, NULL) == SQLITE_OK){
-                sqlite3_step(statement);
-            }
-            sqlite3_finalize(statement);
-        }
-    }
+    [db commit];
+    [db close];
     
     [array release];
+    [pool release];
 }
 
 /**
@@ -167,29 +164,27 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 		
 	NSError *error = nil;
 	//Try to automatically migrate minor changes
-	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys: [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,[NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption, nil];
-    NSDictionary *options2 = [NSDictionary dictionaryWithObjectsAndKeys: [NSNumber numberWithBool:YES], NSReadOnlyPersistentStoreOption, nil];
+	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys: 
+                             [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
+                             [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
+                             [NSNumber numberWithBool:YES], NSReadOnlyPersistentStoreOption,
+                             nil];
     _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:self.managedObjectModel];
 	
 
 //    NSString *p = [[self applicationDocumentsDirectory] stringByAppendingPathComponent: @"Word.sqlite"];
     if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
-                                                   configuration:@"Word"
+                                                   configuration:nil
                                                              URL:[NSURL fileURLWithPath:self.bundleDbPath]
-                                                         options:options2
+                                                         options:options
                                                            error:&error]) {
 		[self handleError:error fromSource:@"Open persistant store"];
     }
     
-    if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
-                                                   configuration:@"History"
-                                                             URL:[NSURL fileURLWithPath:self.docHistoryPath]
-                                                         options:options
-                                                           error:&error]) {
-		[self handleError:error fromSource:@"Open persistant store - history"];
-    }
+    // check history db, create it if not exist
+    [self checkHistoryDatabase];
     
-	// handle obsolete WordFrequencyList.sqlite under document
+    // handle obsolete WordFrequencyList.sqlite under document
     [self migrateObsoleteDatabase];
     
     // check plist file version
@@ -206,15 +201,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
             [self.settingsDictionary setValue:[NSNumber numberWithInt:bundleVersion] forKey:@"Version"];
             needMigrate = YES;
         }
-    }
-    if (needMigrate){
-        // handle history under document
-        [self migrateHistoryDatabase];
-    }
-    else{
-#ifdef DEBUG
-        [self migrateHistoryDatabase];
-#endif
     }
     
     return _persistentStoreCoordinator;
@@ -276,58 +262,29 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 
 - (void)markWord:(Word *)word status:(NSUInteger)status
 {
-    sqlite3 *database;
-    NSString *sql;
-    sqlite3_stmt *statement;
-    
-    word.markStatus = [NSNumber numberWithInt:status];
-    switch (status) {
-        case 0:
-            word.markDate = @"";
-            
-            // update history in doc
-            if (sqlite3_open([self.docHistoryPath UTF8String], &database) == SQLITE_OK) {
-                sql = [NSString stringWithFormat:@"DELETE FROM ZHISTORY WHERE ZSPELL='%@'", word.spell];
-                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                    sqlite3_step(statement);
-                }
-                sqlite3_finalize(statement);
-            }
-            sqlite3_close(database);
-            database = NULL;
-            break;
-        case 1:
-            word.markDate = [[NSDate date] formatLongDate];
-            
-            // update history in doc
-            History *history = [NSEntityDescription insertNewObjectForEntityForName:@"History" inManagedObjectContext:self.managedObjectContext];
-            history.spell = word.spell;
-            history.markComplete = [NSNumber numberWithBool:NO];
-            history.markDate = word.markDate;
-            break;
-        case 2:
-            word.markDate = [[NSDate date] formatLongDate];
-            
-            // update history in doc
-            if (sqlite3_open([self.docHistoryPath UTF8String], &database) == SQLITE_OK) {
-                sql = [NSString stringWithFormat:@"UPDATE ZHISTORY SET ZMARKCOMPLETE=1, ZMARKDATE='%@' WHERE ZSPELL='%@'", word.markDate, word.spell];
-                if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                    sqlite3_step(statement);
-                }
-                sqlite3_finalize(statement);
-            }
-            sqlite3_close(database);
-            database = NULL;
-            break;
+    if (status == 0){
+        [self.historyDatabase executeUpdate:@"DELETE FROM history WHERE spell = ?", word.spell];
     }
-    [self saveFromSource:@"mark word"];
+    else if (status == 1){
+        [self.historyDatabase executeUpdate:@"INSERT INTO history VALUES (?, ?, ?, ?, ?)",
+         [[word.spell retain] autorelease],
+         [NSNumber numberWithInt:0],
+         [[NSDate date] formatLongDate],
+         word.category,
+         word.group];
+    }
+    else if (status == 2){
+        [self.historyDatabase executeUpdate:@"UPDATE history SET markComplete = 1, markDate = ? WHERE spell = ?", [[NSDate date] formatLongDate], word.spell];
+    }
+    
     [[NSNotificationCenter defaultCenter] postNotificationName:HISTORY_CHANGED_NOTIFICATION object:self];
 }
 
-- (void)markWordToNextLevel:(Word *)word
+- (int)markWordToNextLevel:(Word *)word
 {
     NSUInteger k = 0;
-    switch ([word.markStatus intValue]) {
+    int status = [self getMarkStatusBySpell:word.spell];
+    switch (status) {
         case 0:
             k = 1;
             break;
@@ -339,6 +296,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
             break;
     }
     [self markWord:word status:k];
+    return k;
 }
 
 
@@ -369,7 +327,7 @@ static NSDictionary *alldict = nil;
 
 - (void)setNotificationOn:(BOOL)_notificationOn
 {
-    [self.settingsDictionary setValue:[NSNumber numberWithBool:_notificationOn] forKey:@"DetailPageAutoSpeekOn"];
+    [self.settingsDictionary setValue:[NSNumber numberWithBool:_notificationOn] forKey:@"NotificationOn"];
 }
 
 - (BOOL)isNoticationOn
@@ -509,6 +467,68 @@ static NSDictionary *alldict = nil;
         NSString *reviewURL = @"itms-apps://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?type=Purple+Software&id=481628150";
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:reviewURL]];
     }
+}
+
+
+
+- (int)getMarkStatusBySpell:(NSString *)spell
+{
+    int status = 0;
+    FMResultSet *rs = [self.historyDatabase executeQuery:@"SELECT markComplete FROM history WHERE spell = ?", spell];
+    if ([rs next])
+        status = [rs intForColumnIndex:0] + 1;
+    [rs close];
+    return status;
+}
+
+- (int)getMarkCountByCategory:(NSUInteger)category AndStatus:(NSUInteger)status
+{
+    int count = 0;
+    FMResultSet *rs = [self.historyDatabase executeQuery:@"SELECT COUNT(*) FROM history WHERE categoryId = ? AND markComplete = ?", [NSNumber numberWithInt:category], [NSNumber numberWithInt:status]];
+    if ([rs next])
+        count = [rs intForColumnIndex:0];
+    return count;
+}
+
+- (int)getMarkCountByCategory:(NSUInteger)category AndGroup:(NSUInteger)group AndStatus:(NSUInteger)status
+{
+    int count = 0;
+    FMResultSet *rs = [self.historyDatabase executeQuery:@"SELECT COUNT(*) FROM history WHERE categoryId = ? AND groupId = ? AND markComplete = ?", [NSNumber numberWithInt:category], [NSNumber numberWithInt:group], [NSNumber numberWithInt:status]];
+    if ([rs next])
+        count = [rs intForColumnIndex:0];
+    return count;
+}
+
+- (NSArray *)getMarkedWordsByCategory:(NSUInteger)category AndGroup:(NSUInteger)group
+{
+    NSMutableArray *array = [[[NSMutableArray alloc] init] autorelease];
+    FMResultSet *rs = [self.historyDatabase executeQuery:@"SELECT spell FROM history WHERE categoryId = ? AND groupId = ?", [NSNumber numberWithInt:category], [NSNumber numberWithInt:group]];
+    while ([rs next]) {
+        [array addObject:[rs stringForColumnIndex:0]];
+    }
+    return [NSArray arrayWithArray:array];
+}
+
+- (NSSet *)getUnmarkedWordsByCategory:(NSUInteger)category AndGroup:(NSUInteger)group
+{
+    NSMutableSet *s1 = [NSMutableSet set];
+    NSMutableSet *s2 = [NSMutableSet set];
+    FMDatabase *db = [FMDatabase databaseWithPath:self.bundleDbPath];
+    [db open];
+    FMResultSet *rs = [db executeQuery:@"SELECT ZSPELL FROM ZWORD WHERE ZCATEGORY = ? AND ZGROUP = ?", [NSNumber numberWithInt:category], [NSNumber numberWithInt:group]];
+    while ([rs next]) {
+        [s1 addObject:[rs stringForColumnIndex:0]];
+    }
+    [rs close];
+    [db close];
+    
+    rs = [self.historyDatabase executeQuery:@"SELECT spell FROM history WHERE categoryId = ? AND groupId = ?", [NSNumber numberWithInt:category], [NSNumber numberWithInt:group]];
+    while ([rs next]) {
+        [s2 addObject:[rs stringForColumnIndex:0]];
+    }
+    [rs close];
+    [s1 minusSet:s2];
+    return s1;
 }
 
 @end
