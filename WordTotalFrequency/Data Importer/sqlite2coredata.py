@@ -48,7 +48,7 @@ for row in inCursor:
 	# Create ZWORD entry
 	vals = []
 	vals.append(count+1)                                    # Z_PK	row[0]
-	vals.append(2)                                          # Z_ENT
+	vals.append(1)                                          # Z_ENT
 	vals.append(1)                                          # Z_OPT
 	vals.append(getCategoryId(count))                       # ZCATEGORY	row[11]
 	vals.append(getGroupId(getCategoryId(count), count))    # ZGROUP
