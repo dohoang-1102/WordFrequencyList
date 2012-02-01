@@ -35,6 +35,7 @@
 @property (nonatomic, readonly) NSDictionary *settingsDictionary;
 @property (nonatomic, readonly) NSString *bundleDbPath;
 @property (nonatomic, readonly) NSString *docHistoryPath;
+@property (nonatomic, readonly) NSString *AppID;
 @property (nonatomic, getter = isNoticationOn) BOOL notificationOn;
 @property (nonatomic, getter = isDetailPageAutoSpeakOn) BOOL detailPageAutoSpeakOn;
 

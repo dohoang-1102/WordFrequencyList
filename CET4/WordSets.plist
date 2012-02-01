@@ -98,5 +98,7 @@
 	</array>
 	<key>Version</key>
 	<integer>1</integer>
+	<key>AppID</key>
+	<string>499492389</string>
 </dict>
 </plist>

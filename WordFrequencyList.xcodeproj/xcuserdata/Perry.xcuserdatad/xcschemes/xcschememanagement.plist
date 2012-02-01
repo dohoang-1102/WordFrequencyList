@@ -9,6 +9,11 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>CET6WordFrequencyList.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 		<key>WordFrequencyList.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -23,6 +28,11 @@
 			<true/>
 		</dict>
 		<key>C23D174E14D7A2F0003D4CEE</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>C260F30B14D97A1A00ED0B27</key>
 		<dict>
 			<key>primary</key>
 			<true/>

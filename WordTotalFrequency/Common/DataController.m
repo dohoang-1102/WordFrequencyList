@@ -206,6 +206,14 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     return _persistentStoreCoordinator;
 }
 
+- (NSString *)AppID
+{
+    NSString *appid = [self.settingsDictionary objectForKey:@"AppID"];
+    if (!appid)
+        appid = @"481628150";
+    return appid;
+}
+
 #pragma mark -
 #pragma mark CDLC Save
 
@@ -464,7 +472,7 @@ static NSDictionary *alldict = nil;
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
     if (buttonIndex == 1) {
-        NSString *reviewURL = @"itms-apps://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?type=Purple+Software&id=481628150";
+        NSString *reviewURL = [NSString stringWithFormat:@"itms-apps://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?type=Purple+Software&id=%@", self.AppID];
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:reviewURL]];
     }
 }
