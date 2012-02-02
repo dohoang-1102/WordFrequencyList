@@ -14,6 +14,11 @@
 			<key>orderHint</key>
 			<integer>2</integer>
 		</dict>
+		<key>IELTSWordFrequencyList.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 		<key>WordFrequencyList.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -28,6 +33,11 @@
 			<true/>
 		</dict>
 		<key>C23D174E14D7A2F0003D4CEE</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>C25AC21114DAF214001635CB</key>
 		<dict>
 			<key>primary</key>
 			<true/>
