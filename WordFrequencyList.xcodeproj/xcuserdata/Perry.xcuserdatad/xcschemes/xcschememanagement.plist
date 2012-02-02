@@ -19,6 +19,11 @@
 			<key>orderHint</key>
 			<integer>3</integer>
 		</dict>
+		<key>TOEFLWordFrequencyList.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>4</integer>
+		</dict>
 		<key>WordFrequencyList.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -43,6 +48,11 @@
 			<true/>
 		</dict>
 		<key>C260F30B14D97A1A00ED0B27</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>C28AD9FB14DAFF1600AAC154</key>
 		<dict>
 			<key>primary</key>
 			<true/>
