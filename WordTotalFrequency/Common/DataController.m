@@ -96,7 +96,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 - (void)migrateObsoleteDatabase
 {
     NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString *dbInDoc = [[[self applicationDocumentsDirectory] stringByAppendingPathComponent: SQL_DATABASE_NAME] stringByAppendingString:@".sqlite"];
+    NSString *dbInDoc = [[self.applicationDocumentsDirectory stringByAppendingPathComponent:SQL_DATABASE_NAME] stringByAppendingString:@".sqlite"];
 	// If there is db under document, migrate history data
 	if (![fileManager fileExistsAtPath:dbInDoc]) {
 		return;
