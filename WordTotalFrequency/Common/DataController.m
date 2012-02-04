@@ -15,6 +15,11 @@
 #import "Constant.h"
 #import <sqlite3.h>
 
+@interface DataController()
+- (void)checkHistoryDatabase;
+- (void)migrateObsoleteDatabase;
+@end
+
 @implementation DataController
 
 SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
@@ -61,6 +66,60 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     return _managedObjectModel;
 }
 
+/**
+ Returns the persistent store coordinator for the application.
+ If the coordinator doesn't already exist, it is created and the application's store added to it.
+ */
+- (NSPersistentStoreCoordinator *)persistentStoreCoordinator {
+	
+    if (_persistentStoreCoordinator != nil) {
+        return _persistentStoreCoordinator;
+    }
+    
+	NSError *error = nil;
+	//Try to automatically migrate minor changes
+	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys: 
+                             [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
+                             [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
+                             [NSNumber numberWithBool:YES], NSReadOnlyPersistentStoreOption,
+                             nil];
+    _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:self.managedObjectModel];
+	
+    
+    if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
+                                                   configuration:nil
+                                                             URL:[NSURL fileURLWithPath:self.bundleDbPath]
+                                                         options:options
+                                                           error:&error]) {
+		[self handleError:error fromSource:@"Open persistant store"];
+    }
+    
+    // check history db, create it if not exist
+    [self checkHistoryDatabase];
+    
+    // handle obsolete WordFrequencyList.sqlite under document
+    [self migrateObsoleteDatabase];
+    
+    // check plist file version
+    NSDictionary *dict = [DataUtil readDictionaryFromBundleFile:@"WordSets"];
+    int bundleVersion = [[dict objectForKey:@"Version"] intValue];
+    BOOL needMigrate = NO;
+    if (![self.settingsDictionary.allKeys containsObject:@"Version"]){
+        needMigrate = YES;
+    }
+    else{
+        int docVersion = [[self.settingsDictionary objectForKey:@"Version"] intValue];
+        //        NSLog(@"bunder ver:%d, document ver:%d", bundleVersion, docVersion);
+        if (bundleVersion > docVersion){
+            [self.settingsDictionary setValue:[NSNumber numberWithInt:bundleVersion] forKey:@"Version"];
+            needMigrate = YES;
+        }
+    }
+    
+    return _persistentStoreCoordinator;
+}
+
+#pragma mark - history database & related actions
 - (FMDatabase *)historyDatabase{
     if (_historyDatabase != nil)
         return _historyDatabase;
@@ -152,60 +211,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     [pool release];
 }
 
-/**
- Returns the persistent store coordinator for the application.
- If the coordinator doesn't already exist, it is created and the application's store added to it.
- */
-- (NSPersistentStoreCoordinator *)persistentStoreCoordinator {
-	
-    if (_persistentStoreCoordinator != nil) {
-        return _persistentStoreCoordinator;
-    }
-		
-	NSError *error = nil;
-	//Try to automatically migrate minor changes
-	NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys: 
-                             [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
-                             [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
-                             [NSNumber numberWithBool:YES], NSReadOnlyPersistentStoreOption,
-                             nil];
-    _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:self.managedObjectModel];
-	
-
-//    NSString *p = [[self applicationDocumentsDirectory] stringByAppendingPathComponent: @"Word.sqlite"];
-    if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
-                                                   configuration:nil
-                                                             URL:[NSURL fileURLWithPath:self.bundleDbPath]
-                                                         options:options
-                                                           error:&error]) {
-		[self handleError:error fromSource:@"Open persistant store"];
-    }
-    
-    // check history db, create it if not exist
-    [self checkHistoryDatabase];
-    
-    // handle obsolete WordFrequencyList.sqlite under document
-    [self migrateObsoleteDatabase];
-    
-    // check plist file version
-    NSDictionary *dict = [DataUtil readDictionaryFromBundleFile:@"WordSets"];
-    int bundleVersion = [[dict objectForKey:@"Version"] intValue];
-    BOOL needMigrate = NO;
-    if (![self.settingsDictionary.allKeys containsObject:@"Version"]){
-        needMigrate = YES;
-    }
-    else{
-        int docVersion = [[self.settingsDictionary objectForKey:@"Version"] intValue];
-//        NSLog(@"bunder ver:%d, document ver:%d", bundleVersion, docVersion);
-        if (bundleVersion > docVersion){
-            [self.settingsDictionary setValue:[NSNumber numberWithInt:bundleVersion] forKey:@"Version"];
-            needMigrate = YES;
-        }
-    }
-    
-    return _persistentStoreCoordinator;
-}
-
 - (NSString *)AppID
 {
     NSString *appid = [self.settingsDictionary objectForKey:@"AppID"];
@@ -214,8 +219,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     return appid;
 }
 
-#pragma mark -
-#pragma mark CDLC Save
+#pragma mark - CDLC Save
 
 /**
  Saves the Managed Object Context, calling the logging method if an error occurs
@@ -290,25 +294,12 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
 
 - (int)markWordToNextLevel:(Word *)word
 {
-    NSUInteger k = 0;
     int status = [self getMarkStatusBySpell:word.spell];
-    switch (status) {
-        case 0:
-            k = 1;
-            break;
-        case 1:
-            k = 2;
-            break;
-        case 2:
-            k = 0;
-            break;
-    }
+    int k = status + 1;
+    if (k == 3) k = 0;
     [self markWord:word status:k];
     return k;
 }
-
-
-
 
 static NSDictionary *alldict = nil;
 
@@ -320,18 +311,12 @@ static NSDictionary *alldict = nil;
     return alldict;
 }
 
-
-
-
 - (NSDictionary *)dictionaryForCategoryId:(NSUInteger)categoryId
 {
     NSArray *array = [self.settingsDictionary objectForKey:@"WordSets"];
     NSDictionary *dict = [array objectAtIndex:categoryId];
     return dict;
 }
-
-
-
 
 - (void)setNotificationOn:(BOOL)_notificationOn
 {
@@ -354,8 +339,6 @@ static NSDictionary *alldict = nil;
     NSNumber *number = [self.settingsDictionary objectForKey:@"DetailPageAutoSpeakOn"];
     return [number boolValue];
 }
-
-
 
 - (void)saveSettingsDictionary
 {
@@ -381,8 +364,6 @@ static NSDictionary *alldict = nil;
     return ary;
 }
 
-
-
 - (void)scheduleNextWord
 {
     if (![self isNoticationOn])
@@ -390,23 +371,26 @@ static NSDictionary *alldict = nil;
     
     // retrieve next unmarked word
     NSString *nextWord = @"";
-    sqlite3 *database;
-    if (sqlite3_open([self.bundleDbPath UTF8String], &database) == SQLITE_OK) {
-        NSString *sql = @"SELECT ZSPELL, ZCATEGORY FROM ZWORD WHERE ZMARKSTATUS=0 ORDER BY ZRANK DESC LIMIT 0, 1";
-        sqlite3_stmt *statement;
-        if (sqlite3_prepare_v2(database, [sql UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-            if (sqlite3_step(statement) == SQLITE_ROW) {
-                nextWord = [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)];
-            }
+    NSString *cursor;
+    FMDatabase *db = [FMDatabase databaseWithPath:self.bundleDbPath];
+    [db open];
+    FMResultSet *rs = [db executeQuery:@"SELECT ZSPELL FROM ZWORD"];
+    while ([rs next]) {
+        cursor = [rs stringForColumnIndex:0];
+        FMResultSet *rs2 = [self.historyDatabase executeQuery:@"SELECT spell FROM history WHERE spell = ?", cursor];
+        if ([rs2 next]){
+            [rs2 close];
+            continue;
         }
-        sqlite3_finalize(statement);
-    } else {
-        NSLog(@"failed open db");
+        else {
+            [rs2 close];
+            break;
+        }
     }
-    sqlite3_close(database);
-    database = NULL;
+    [rs close];
+    [db close];
     
-    if (nextWord == @"")
+    if ([nextWord isEqualToString:@""])
         return;
     
     NSCalendar *calendar = [NSCalendar autoupdatingCurrentCalendar];
@@ -476,8 +460,6 @@ static NSDictionary *alldict = nil;
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:reviewURL]];
     }
 }
-
-
 
 - (int)getMarkStatusBySpell:(NSString *)spell
 {

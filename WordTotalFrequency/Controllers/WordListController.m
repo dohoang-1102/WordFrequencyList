@@ -87,6 +87,10 @@ static NSPredicate *searchPredicate;
     
     if (_wordSetIndex > -1 || _searchString)
     {
+        [self.fetchedResultsController performFetch:NULL];
+        [self.tableView reloadData];
+        
+        /*
         dispatch_queue_t main_queue = dispatch_get_main_queue();
         dispatch_queue_t request_queue = dispatch_queue_create("com.app.biterice", NULL);
         
@@ -128,6 +132,7 @@ static NSPredicate *searchPredicate;
                 }
             });
         });
+         */
     }
 }
 
@@ -295,23 +300,12 @@ static NSPredicate *searchPredicate;
                                                              managedObjectContext:[DataController sharedDataController].managedObjectContext
                                                              sectionNameKeyPath:nil cacheName:nil];
 	_fetchedResultsController = [aFetchedResultsController retain];
-	_fetchedResultsController.delegate = self;
 	
 	// Memory management.
 	[aFetchedResultsController release];
 	[fetchRequest release];
     
 	return _fetchedResultsController;
-}
-
-#pragma mark - NSFetchedResultsControllerDelegate
-
-- (void)controllerDidChangeContent:(NSFetchedResultsController *)controller
-{
-}
-
-- (void)controller:(NSFetchedResultsController *)controller didChangeObject:(id)anObject atIndexPath:(NSIndexPath *)indexPath forChangeType:(NSFetchedResultsChangeType)type newIndexPath:(NSIndexPath *)newIndexPath
-{
 }
 
 @end
