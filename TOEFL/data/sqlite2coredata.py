@@ -4,13 +4,13 @@ import time
 
 # return category id
 def getCategoryId(count):
-    if count < 882:
+    if count < 861:
         return 0
-    elif count < 1984:
+    elif count < 1936:
         return 1
-    elif count < 3362:
+    elif count < 3281:
         return 2
-    elif count < 5085:
+    elif count < 4962:
         return 3
     else:
         return 4
@@ -20,13 +20,13 @@ def getGroupId(category, count):
     if category == 0:
         return (count)/200;
     elif category == 1:
-        return (count-882)/200;
+        return (count-861)/200;
     elif category == 2:
-        return (count-1984)/200;
+        return (count-1936)/200;
     elif category == 3:
-        return (count-3362)/200;
+        return (count-3281)/200;
     else:
-        return (count-5085)/200;
+        return (count-4962)/200;
 
 inConn = sqlite3.connect('mysql.sqlite')
 outConn = sqlite3.connect('WordFrequencyList.sqlite')
