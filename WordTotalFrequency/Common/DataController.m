@@ -17,7 +17,8 @@
 
 @interface DataController()
 - (void)checkHistoryDatabase;
-- (void)migrateObsoleteDatabase;
+- (BOOL)migrateObsoleteDatabase;
+- (void)migrateHistoryDatabase;
 @end
 
 @implementation DataController
@@ -98,7 +99,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     [self checkHistoryDatabase];
     
     // handle obsolete WordFrequencyList.sqlite under document
-    [self migrateObsoleteDatabase];
+    BOOL b = [self migrateObsoleteDatabase];
     
     // check plist file version
     NSDictionary *dict = [DataUtil readDictionaryFromBundleFile:@"WordSets"];
@@ -109,11 +110,20 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     }
     else{
         int docVersion = [[self.settingsDictionary objectForKey:@"Version"] intValue];
-        //        NSLog(@"bunder ver:%d, document ver:%d", bundleVersion, docVersion);
         if (bundleVersion > docVersion){
-            [self.settingsDictionary setValue:[NSNumber numberWithInt:bundleVersion] forKey:@"Version"];
             needMigrate = YES;
         }
+    }
+    if (needMigrate) {
+        [self.settingsDictionary setValue:[NSNumber numberWithInt:bundleVersion] forKey:@"Version"];
+        [self saveSettingsDictionary];
+    }
+#ifdef DEBUG
+//    needMigrate = YES;
+#endif
+    
+    if (needMigrate && !b) {
+        [self migrateHistoryDatabase];
     }
     
     return _persistentStoreCoordinator;
@@ -141,24 +151,27 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
             return;
         }
         
+        [db beginTransaction];
         [db executeUpdate:@"CREATE TABLE history (spell VARCHAR(255) PRIMARY KEY, markComplete INTEGER, markDate VARCHAR(255), categoryId INTEGER, groupId INTEGER)"];
         [db executeUpdate:@"CREATE INDEX history_spell_index ON history (spell)"];
         [db executeUpdate:@"CREATE INDEX history_markDate_index ON history (markDate)"];
         [db executeUpdate:@"CREATE INDEX history_categoryId_index ON history (categoryId)"];
         [db executeUpdate:@"CREATE INDEX history_groupId_index ON history (groupId)"];
+        [db commit];
+        
         [db close];
         
         [pool release];
     }
 }
 
-- (void)migrateObsoleteDatabase
+- (BOOL)migrateObsoleteDatabase
 {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSString *dbInDoc = [[self.applicationDocumentsDirectory stringByAppendingPathComponent:SQL_DATABASE_NAME] stringByAppendingString:@".sqlite"];
 	// If there is db under document, migrate history data
 	if (![fileManager fileExistsAtPath:dbInDoc]) {
-		return;
+		return NO;
 	}
     
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -167,19 +180,13 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     FMDatabase *db = [FMDatabase databaseWithPath:dbInDoc];
     if (![db open]){
         [pool release];
-        return;
+        return NO;
     }
     
     NSMutableArray *array = [[NSMutableArray alloc] init];
-    FMResultSet *rs = [db executeQuery:@"SELECT ZSPELL, ZMARKSTATUS, ZMARKDATE, ZCATEGORY, ZGROUP FROM ZWORD WHERE ZMARKDATE <> ''"];
+    FMResultSet *rs = [db executeQuery:@"SELECT ZSPELL FROM ZWORD WHERE ZMARKDATE <> ''"];
     while ([rs next]) {
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-                              [rs stringForColumn:@"ZSPELL"], @"spell",
-                              [NSNumber numberWithInt:[rs intForColumn:@"ZMARKSTATUS"]-1], @"markComplete",
-                              [rs stringForColumn:@"ZMARKDATE"], @"markDate",
-                              [NSNumber numberWithInt:[rs intForColumn:@"ZCATEGORY"]], @"category",
-                              [NSNumber numberWithInt:[rs intForColumn:@"ZGROUP"]], @"group", nil];
-        [array addObject:dict];
+        [array addObject:[rs stringForColumnIndex:0]];
     }
     [rs close];
     [db close];
@@ -187,27 +194,69 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     // remove document db
     [fileManager removeItemAtPath:dbInDoc error:NULL];
     
-    // insert mark history from array into history table
-    db = [FMDatabase databaseWithPath:self.docHistoryPath];
-    if (![db open]){
-        [pool release];
-        [array release];
-        return;
-    }
+    // compare to bundle database
+    FMDatabase *dbBundle = [FMDatabase databaseWithPath:self.bundleDbPath];
+    [dbBundle open];
     
-    [db beginTransaction];
-    for (NSDictionary *dict in array) {
-        [db executeUpdate:@"INSERT INTO history VALUES (?, ?, ?, ?, ?)",
-         [dict objectForKey:@"spell"],
-         [dict objectForKey:@"markComplete"],
-         [dict objectForKey:@"markDate"],
-         [dict objectForKey:@"category"],
-         [dict objectForKey:@"group"]];
+    [self.historyDatabase beginTransaction];
+    for (NSString *spell in array) {
+        FMResultSet *rs2 = [dbBundle executeQuery:@"SELECT ZMARKSTATUS, ZMARKDATE, ZCATEGORY, ZGROUP FROM ZWORD WHERE ZSPELL = ?", spell];
+        if ([rs2 next]) {
+            [self.historyDatabase executeUpdate:@"INSERT INTO history VALUES (?, ?, ?, ?, ?)",
+             spell,
+             [NSNumber numberWithInt:[rs2 intForColumn:@"ZMARKSTATUS"]-1],
+             [rs2 stringForColumn:@"ZMARKDATE"],
+             [NSNumber numberWithInt:[rs2 intForColumn:@"ZCATEGORY"]],
+             [NSNumber numberWithInt:[rs2 intForColumn:@"ZGROUP"]]];
+        }
+        [rs2 close];
     }
-    [db commit];
-    [db close];
+    [self.historyDatabase commit];
+    
+    [dbBundle close];
     
     [array release];
+    [pool release];
+    return YES;
+}
+
+- (void)migrateHistoryDatabase
+{
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    NSMutableArray *wordsNotExist = [[NSMutableArray alloc] init];
+    
+    
+    // double check category & group index
+    FMDatabase *dbBundle = [FMDatabase databaseWithPath:self.bundleDbPath];
+    [dbBundle open];
+    
+    FMResultSet *rs = [self.historyDatabase executeQuery:@"SELECT spell FROM history"];
+    while ([rs next]) {
+        NSString *spell = [rs stringForColumnIndex:0];
+        
+        FMResultSet *rs2 = [dbBundle executeQuery:@"SELECT ZCATEGORY, ZGROUP FROM ZWORD WHERE ZSPELL = ?", spell];
+        if ([rs2 next]) {
+            [self.historyDatabase executeUpdate:@"UPDATE history SET categoryId = ?, groupId = ? WHERE spell = ?",
+             [NSNumber numberWithInt:[rs2 intForColumn:@"ZCATEGORY"]],
+             [NSNumber numberWithInt:[rs2 intForColumn:@"ZGROUP"]],
+             spell];
+        }
+        else {
+            [wordsNotExist addObject:spell];
+        }
+        [rs2 close];
+    }
+    [rs close];
+    
+    [dbBundle close];
+    
+    
+    // remove histories that do not exist in bundle database any more
+    for (NSString *spell in wordsNotExist) {
+        [self.historyDatabase executeQuery:@"DELETE FROM history WHERE spell = ?", spell];
+    }
+    
+    [wordsNotExist release];
     [pool release];
 }
 
