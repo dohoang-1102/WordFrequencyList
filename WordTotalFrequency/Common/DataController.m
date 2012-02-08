@@ -333,6 +333,9 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
          [[NSDate date] formatLongDate],
          word.category,
          word.group];
+        
+        // for testing wrong answer, mark down
+        [self.historyDatabase executeUpdate:@"UPDATE history SET markComplete = 0, markDate = ? WHERE spell = ?", [[NSDate date] formatLongDate], word.spell];
     }
     else if (status == 2){
         [self.historyDatabase executeUpdate:@"UPDATE history SET markComplete = 1, markDate = ? WHERE spell = ?", [[NSDate date] formatLongDate], word.spell];
@@ -432,6 +435,7 @@ static NSDictionary *alldict = nil;
             continue;
         }
         else {
+            nextWord = cursor;
             [rs2 close];
             break;
         }

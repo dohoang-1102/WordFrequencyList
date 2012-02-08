@@ -33,7 +33,7 @@
 			<key>color</key>
 			<integer>16729600</integer>
 			<key>description</key>
-			<string>最基本的四级词汇，有一定基础的可以跳过这个单元</string>
+			<string>最基本的托福词汇，有一定基础的可以跳过这个单元</string>
 			<key>iconUrl</key>
 			<string>Unit-1</string>
 			<key>testMarked</key>
@@ -47,7 +47,7 @@
 			<key>color</key>
 			<integer>16737792</integer>
 			<key>description</key>
-			<string>基本四级词汇，达到及格底线必备的词汇</string>
+			<string>基本托福词汇，达到及格底线必备的词汇</string>
 			<key>iconUrl</key>
 			<string>Unit-2</string>
 			<key>testMarked</key>
@@ -61,7 +61,7 @@
 			<key>color</key>
 			<integer>16750592</integer>
 			<key>description</key>
-			<string>中级四级词汇，这些词汇能帮到您顺畅做题</string>
+			<string>中级托福词汇，这些词汇能帮到您顺畅做题</string>
 			<key>iconUrl</key>
 			<string>Unit-3</string>
 			<key>testMarked</key>
@@ -75,7 +75,7 @@
 			<key>color</key>
 			<integer>16759040</integer>
 			<key>description</key>
-			<string>高级四级词汇，掌握这些词汇有助于您无障碍阅读</string>
+			<string>高级托福词汇，掌握这些词汇有助于您无障碍阅读</string>
 			<key>iconUrl</key>
 			<string>Unit-4</string>
 			<key>testMarked</key>
@@ -89,7 +89,7 @@
 			<key>color</key>
 			<integer>16767488</integer>
 			<key>description</key>
-			<string>高级四级词汇 , 帮助您冲刺四级最高分</string>
+			<string>高级托福词汇 , 帮助您冲刺托福最高分</string>
 			<key>iconUrl</key>
 			<string>Unit-5</string>
 			<key>testMarked</key>
@@ -99,6 +99,6 @@
 	<key>Version</key>
 	<integer>1</integer>
 	<key>AppID</key>
-	<string>499492389</string>
+	<string>501279743</string>
 </dict>
 </plist>
