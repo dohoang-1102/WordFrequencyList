@@ -4,13 +4,13 @@ import time
 
 # return category id
 def getCategoryId(count):
-    if count < 865:
+    if count < 990:
         return 0
-    elif count < 2161:
+    elif count < 2226:
         return 1
-    elif count < 4107:
+    elif count < 3773:
         return 2
-    elif count < 7025:
+    elif count < 5706:
         return 3
     else:
         return 4
@@ -20,22 +20,22 @@ def getGroupId(category, count):
     if category == 0:
         return (count)/200;
     elif category == 1:
-        return (count-865)/200;
+        return (count-990)/200;
     elif category == 2:
-        return (count-2161)/200;
+        return (count-2226)/200;
     elif category == 3:
-        return (count-4107)/200;
+        return (count-3773)/200;
     else:
-        return (count-7025)/200;
+        return (count-5706)/200;
 
 inConn = sqlite3.connect('mysql.sqlite')
 outConn = sqlite3.connect('WordFrequencyList.sqlite')
- 
+
 inCursor = inConn.cursor()
 outCursor = outConn.cursor()
- 
+
 outConn.execute("DELETE FROM ZWORD")
- 
+
 maxId = 0
 count = -1
 inCursor.execute("select * from word order by frequency desc")
@@ -60,9 +60,9 @@ for row in inCursor:
 	vals.append(row[7])                                     # ZTAGS
 	vals.append(row[3])                                     # ZTRANSLATE
 	outConn.execute("insert into ZWORD values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", vals)
-    
-    
+
+
 print count+1 
 outConn.execute("update Z_PRIMARYKEY set Z_MAX=? where Z_NAME = 'Word'", [count+1])
- 
+
 outConn.commit()
