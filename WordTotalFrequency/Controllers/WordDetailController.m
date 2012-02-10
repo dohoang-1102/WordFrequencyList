@@ -92,9 +92,9 @@ typedef enum {
     image.image = [UIImage imageNamed:imageName];
     UILabel *label = (UILabel *)[self.view viewWithTag:kSegmentLabelTag];
     if(status == 0){
-        label.text = @"标记为“熟悉”";
+        label.text = @"点此标记为“熟悉”";
     }else if(status == 1){
-        label.text = @"标记为“记住”";
+        label.text = @"点此标记为“记住”";
     }else if(status == 2){
         label.text = @"清除标记";
     }
@@ -223,7 +223,7 @@ typedef enum {
     [self.view addSubview:segmentBg];
     [segmentBg release];
     
-    NSArray *titles = [NSArray arrayWithObjects:@"上一页", @"标记为“记住”", @"下一页", nil];
+    NSArray *titles = [NSArray arrayWithObjects:@"上一页", @"点此标记为“记住”", @"下一页", nil];
     _segmentedControl = [[CustomSegmentedControl alloc]
                          initWithSegmentCount:titles.count
                          segmentsize:CGSizeMake(77, 48)
@@ -302,7 +302,7 @@ typedef enum {
 
 - (UIButton *) buttonFor:(CustomSegmentedControl*)segmentedControl atIndex:(NSUInteger)segmentIndex;
 {
-    NSArray *titles = [NSArray arrayWithObjects:@"上一页", @"标记为“记住”", @"下一页", nil];
+    NSArray *titles = [NSArray arrayWithObjects:@"上一页", @"点此标记为“记住”", @"下一页", nil];
     
     CapLocation location;
     if (segmentIndex == 0)
@@ -362,11 +362,11 @@ typedef enum {
         image.tag = kSegmentMarkTag;
         label.tag = kSegmentLabelTag;
 
-        image.frame = CGRectMake(16, 23, 12, 13);
+        image.frame = CGRectMake(6, 22, 12, 13);
         [button addSubview:image];
         [image release];
         
-        label.frame = CGRectMake(42, label.frame.origin.y, label.frame.size.width-46, label.frame.size.height);
+        label.frame = CGRectMake(24, label.frame.origin.y, label.frame.size.width-26, label.frame.size.height);
     }
     
     
