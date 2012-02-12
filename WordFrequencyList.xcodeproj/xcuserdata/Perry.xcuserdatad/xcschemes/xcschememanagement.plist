@@ -14,6 +14,11 @@
 			<key>orderHint</key>
 			<integer>2</integer>
 		</dict>
+		<key>GaokaoWordFrequencyList.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>5</integer>
+		</dict>
 		<key>IELTSWordFrequencyList.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -53,6 +58,11 @@
 			<true/>
 		</dict>
 		<key>C28AD9FB14DAFF1600AAC154</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>C2EC1EEC14E80795006961DA</key>
 		<dict>
 			<key>primary</key>
 			<true/>
