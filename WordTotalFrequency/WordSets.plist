@@ -97,8 +97,10 @@
 		</dict>
 	</array>
 	<key>Version</key>
-	<integer>2</integer>
+	<real>1.31</real>
 	<key>AppID</key>
 	<string>481628150</string>
+	<key>AppKey</key>
+	<string>4f38d35852701553e9000029</string>
 </dict>
 </plist>

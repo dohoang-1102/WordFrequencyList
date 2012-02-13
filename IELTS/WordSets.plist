@@ -100,5 +100,7 @@
 	<integer>1</integer>
 	<key>AppID</key>
 	<string>501972461</string>
+	<key>AppKey</key>
+	<string>4f38e12c5270152e29000037</string>
 </dict>
 </plist>

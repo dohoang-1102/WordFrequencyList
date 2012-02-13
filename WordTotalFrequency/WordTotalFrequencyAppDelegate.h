@@ -7,9 +7,9 @@
 //
 
 #import <CoreData/CoreData.h>
+#import "MobClick.h"
 
-
-@interface WordTotalFrequencyAppDelegate : NSObject <UIApplicationDelegate> {
+@interface WordTotalFrequencyAppDelegate : NSObject <UIApplicationDelegate, MobClickDelegate> {
 }
 
 

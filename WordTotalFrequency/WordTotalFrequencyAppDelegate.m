@@ -45,6 +45,8 @@
     
     [[DataController sharedDataController] incrementAppLoadedTimes];
     
+    [MobClick setDelegate:self reportPolicy:BATCH];
+    
     return YES;
 }
 
@@ -59,7 +61,6 @@
 		[[DataController sharedDataController] saveFromSource:@"application will terminate"];
 	}
     [[DataController sharedDataController].historyDatabase close];
-    [[DataController sharedDataController].historyDatabase release];
     
     // local notification
     [[UIApplication sharedApplication] cancelAllLocalNotifications];
@@ -83,6 +84,14 @@
     [_window release];
     [_navigationController release];
     [super dealloc];
+}
+
+- (NSString *)appKey
+{
+    NSString *appkey = [[DataController sharedDataController].settingsDictionary objectForKey:@"AppKey"];
+    if (!appkey)
+        appkey = @"4f38d35852701553e9000029";
+    return appkey;
 }
 
 @end

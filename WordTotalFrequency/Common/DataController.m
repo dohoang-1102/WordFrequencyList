@@ -103,19 +103,20 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(DataController);
     
     // check plist file version
     NSDictionary *dict = [DataUtil readDictionaryFromBundleFile:@"WordSets"];
-    int bundleVersion = [[dict objectForKey:@"Version"] intValue];
+    float bundleVersion = [[dict objectForKey:@"Version"] floatValue];
     BOOL needMigrate = NO;
     if (![self.settingsDictionary.allKeys containsObject:@"Version"]){
         needMigrate = YES;
     }
     else{
-        int docVersion = [[self.settingsDictionary objectForKey:@"Version"] intValue];
-        if (bundleVersion > docVersion){
+        float docVersion = [[self.settingsDictionary objectForKey:@"Version"] floatValue];
+        if (bundleVersion != docVersion){
+            NSLog(@"ns %f, %f", bundleVersion, docVersion);
             needMigrate = YES;
         }
     }
     if (needMigrate) {
-        [self.settingsDictionary setValue:[NSNumber numberWithInt:bundleVersion] forKey:@"Version"];
+        [self.settingsDictionary setValue:[NSNumber numberWithFloat:bundleVersion] forKey:@"Version"];
         [self saveSettingsDictionary];
     }
 #ifdef DEBUG
