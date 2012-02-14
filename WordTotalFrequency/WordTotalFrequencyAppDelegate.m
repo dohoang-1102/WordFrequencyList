@@ -12,6 +12,7 @@
 #import "UIColor+WTF.h"
 #import "Word.h"
 #import "DataController.h"
+#import "Appirater.h"
 
 @implementation WordTotalFrequencyAppDelegate
 
@@ -43,11 +44,16 @@
         NSLog(@"Recieved Notification %@",localNotif);
     }
     
-    [[DataController sharedDataController] incrementAppLoadedTimes];
-    
     [MobClick setDelegate:self reportPolicy:BATCH];
     
+    [Appirater appLaunched:YES];
+    
     return YES;
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application
+{
+    [Appirater appEnteredForeground:YES];
 }
 
 - (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification

@@ -71,8 +71,6 @@
 
 - (void)scheduleNextWord;
 
-- (void)incrementAppLoadedTimes;
-
 - (int)getMarkStatusBySpell:(NSString *)spell;
 - (int)getMarkCountByCategory:(NSUInteger)category AndStatus:(NSUInteger)status;
 - (int)getMarkCountByCategory:(NSUInteger)category AndGroup:(NSUInteger)group AndStatus:(NSUInteger)status;

@@ -489,32 +489,6 @@ static NSDictionary *alldict = nil;
     [localNotif release];
 }
 
-
-
-- (void)incrementAppLoadedTimes
-{
-    int times = [[self.settingsDictionary objectForKey:@"AppLoadedTimes"] intValue];
-    times += 1;
-    if (times % 5 == 0) {
-        UIAlertView *alert = [[[UIAlertView alloc] initWithTitle:@"喜欢我们的应用吗？"
-                                                         message:@"请为词频背单词评分，您的褒奖和批评是我们持续改进的动力，谢谢！"
-                                                        delegate:self
-                                               cancelButtonTitle:@"不予置评"
-                                               otherButtonTitles:@"我要评分！", nil] autorelease];
-        [alert show];
-    }
-    [self.settingsDictionary setValue:[NSNumber numberWithInt:times] forKey:@"AppLoadedTimes"];
-    [self saveSettingsDictionary];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
-{
-    if (buttonIndex == 1) {
-        NSString *reviewURL = [NSString stringWithFormat:@"itms-apps://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?type=Purple+Software&id=%@", self.AppID];
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:reviewURL]];
-    }
-}
-
 - (int)getMarkStatusBySpell:(NSString *)spell
 {
     int status = 0;
