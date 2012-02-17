@@ -9,6 +9,9 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 
+@protocol InteractivePieDelegate
+- (void)tappedOnPie:(NSUInteger)index;
+@end
 
 @interface OpenGLView : UIView
 {
@@ -66,6 +69,9 @@
     
     NSTimer *_timer;
 }
+
+@property (assign) id<InteractivePieDelegate> delegate;
+
 - (void)setupLayer;
 - (void)setupContext;
 - (void)setupRenderBuffer;

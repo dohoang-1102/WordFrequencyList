@@ -13,6 +13,8 @@
 
 @implementation OpenGLView
 
+@synthesize delegate;
+
 +(Class)layerClass{
     return [CAEAGLLayer class];
 }
@@ -32,6 +34,12 @@
         _shadowTexture = [self setupTexture:@"shadow.png"];
         _rotatePieX = 40.0;
     }
+    
+    UITapGestureRecognizer *regcognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                  action:@selector(pieChartTapped:)];
+    [self addGestureRecognizer:regcognizer];
+    [regcognizer release];
+    
     return self;
 }
 
@@ -406,14 +414,10 @@
     _shadowTextureUniform         = glGetUniformLocation(_shadowProgramHandle, "Texture");
 }
 
-
-
-
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     
     UITouch *touch = [[event allTouches] anyObject];
     CGPoint touchLocation = [touch locationInView: self.superview];
-    
     if (CGRectContainsPoint(self.frame, touchLocation)) {
         
         _isDragging = YES;
@@ -421,9 +425,6 @@
         _oldTouchY = touchLocation.y;
     }
 }
-
-
-
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
     
@@ -447,13 +448,24 @@
     _oldTouchY = touchLocation.y;
 }
 
-
-
-
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
     
     _isDragging = NO;
 }
+
+- (void)pieChartTapped:(UIGestureRecognizer *)gestureRecognizer {
+    [gestureRecognizer setCancelsTouchesInView:YES];
+    _isDragging = NO;
+    
+    for (int i=0; i<PARTNUM; i++){
+        UIImageView *pieLabel = (UIImageView *)[self.superview viewWithTag:PIE_LABEL_TAG_BASE+i];
+        if (CGRectContainsPoint(pieLabel.frame, CGPointMake(_oldTouchX, _oldTouchY))){
+            [self.delegate tappedOnPie:i];
+            break;
+        }
+    }
+}
+
 /*
 // Only override drawRect: if you perform custom drawing.
 // An empty implementation adversely affects performance during animation.
@@ -462,9 +474,6 @@
     // Drawing code
 }
 */
-
-
-
 
 - (void)dealloc{
     [self destroyTimer];

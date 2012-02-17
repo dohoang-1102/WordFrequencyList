@@ -25,8 +25,10 @@
 @property (nonatomic) NSUInteger index;
 
 - (id)initWithFrame:(CGRect)frame image:(NSString *)image;
-- (void)toggleDisplayState:(UnitIconView *)iconView affectDashboard:(BOOL)affect;
 - (void)addCADisplayLink;
 - (void)updateData;
+
+- (void)zoomIn;
+- (void)zoomOut;
 
 @end

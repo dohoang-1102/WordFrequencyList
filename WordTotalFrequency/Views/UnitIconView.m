@@ -139,49 +139,30 @@ const float INSET_OFFSET = 4;
                                            
 - (void)iconTapped:(UIGestureRecognizer *)gestureRecognizer
 {
-    [self toggleDisplayState:self affectDashboard:YES];
+    if (_dashboard.selectedIconIndex == self.index)
+        _dashboard.selectedIconIndex = -1;
+    else
+        _dashboard.selectedIconIndex = self.index;
 }
 
-- (void)toggleDisplayState:(UnitIconView *)iconView affectDashboard:(BOOL)affect
+- (void)zoomIn
 {
-    // toggle previous selected
-    if (_dashboard.selectedIconIndex > -1 && affect)
-    {
-        if (_dashboard.selectedIconIndex != _index){
-            UnitIconView *icon = [_dashboard.unitIcons objectAtIndex:_dashboard.selectedIconIndex];
-            [icon toggleDisplayState:icon affectDashboard:NO];
-        }
-        else{
-            _dashboard.selectedIconIndex = -1;
-            return;
-        }
-    }
-    
-    // toggle self
-    if (_isSelected)
-    {
-        _imagelayer.transform = CATransform3DIdentity;
-        [self performSelector:@selector(addCADisplayLink) withObject:nil afterDelay:0];
-    }
-    else
-    {
+    if (!_isSelected){
         CATransform3D currentTransform = _imagelayer.transform;
         CATransform3D scaled = CATransform3DScale(currentTransform, 1.43, 1.43, 1.43);
         _imagelayer.transform = scaled;
         
-        // set selectedIconIndex
-        if (affect)
-        {
-            for (int i=0; i<[_dashboard.unitIcons count]; i++) {
-                UnitIconView *view = [_dashboard.unitIcons objectAtIndex:i];
-                if (view == self)
-                {
-                    _dashboard.selectedIconIndex = i;
-                    break;
-                }
-            }
-        }
+        _isSelected = YES;
     }
-    _isSelected = !_isSelected;
 }
+
+- (void)zoomOut
+{
+    if (_isSelected){
+        _imagelayer.transform = CATransform3DIdentity;
+        
+        _isSelected = NO;
+    }
+}
+
 @end

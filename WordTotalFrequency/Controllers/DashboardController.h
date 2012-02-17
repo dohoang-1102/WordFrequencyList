@@ -14,16 +14,15 @@
 
 @class WordSetBriefView;
 
-@interface DashboardController : UIViewController<UISearchBarDelegate, WordListDelegate>
+@interface DashboardController : UIViewController<UISearchBarDelegate, WordListDelegate, InteractivePieDelegate>
 {
-    NSInteger _selectedIconIndex;
     UIView *_barContainer;
     OpenGLView *_pieView;
 }
 
 @property (nonatomic, retain) NSMutableArray *wordSets;
 @property (nonatomic, retain) NSMutableArray *unitIcons;
-@property (readwrite) NSInteger selectedIconIndex;
+@property (nonatomic, readwrite) NSInteger selectedIconIndex;
 @property (nonatomic, retain) CustomSearchBar *searchBar;
 @property (nonatomic, retain) WordListController *listController;
 

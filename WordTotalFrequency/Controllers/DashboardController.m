@@ -18,6 +18,9 @@
 #import "DataController.h"
 #import "InfoScrollController.h"
 
+NSString *const kAppNotFirstTime = @"kAppNotFirstTime";
+
+
 @interface DashboardController()
 - (void)dismissSearchResult:(BOOL)animated;
 - (void)collapseWordSetBrief;
@@ -34,6 +37,7 @@
 @synthesize listController = _listController;
 @synthesize collapseButton = _collapseButton;
 @synthesize fetchRequest = _fetchRequest;
+@synthesize selectedIconIndex = _selectedIconIndex;
 
 #define SEARCH_BAR_HEIGHT 40
 #define WORDSETBRIEF_HEIGHT 124
@@ -134,38 +138,32 @@
     _briefView.hidden = NO;
 }
 
-- (NSInteger)selectedIconIndex
-{
-    @synchronized(self) {
-        return _selectedIconIndex;
-    }
-}
-
 - (void)setSelectedIconIndex:(NSInteger)selectedIconIndex
 {
-    @synchronized(self) {
-        NSInteger oldIndex = _selectedIconIndex;
-        _selectedIconIndex = selectedIconIndex;
+    int oldIndex = _selectedIconIndex;
+    _selectedIconIndex = selectedIconIndex;
+    
+    UnitIconView *icon;
+    if (oldIndex > -1){
+        icon = [_unitIcons objectAtIndex:oldIndex];
+        [icon zoomOut];
         
-        UnitIconView *icon;
-        if (selectedIconIndex > -1)
-        {
-            _wordSetBrief.wordSet = [_wordSets objectAtIndex:selectedIconIndex];
-            
-            icon = [_unitIcons objectAtIndex:selectedIconIndex];
-            CGPoint point = icon.center;
-            point = [_wordSetBrief convertPoint:point fromView:icon.superview];
-            [_wordSetBrief centerArrowToX:point.x];
-            [self performSelector:@selector(presentWordSetBrief) withObject:nil afterDelay:.25];
-            [_pieView gotoPart:selectedIconIndex];
-        }
-        else if (oldIndex > -1)
-        {
-            icon = [_unitIcons objectAtIndex:oldIndex];
-            [icon toggleDisplayState:icon affectDashboard:NO];
+        if (selectedIconIndex == -1)
             [self dismissWordSetBrief];
-        }
+    }
+    
+    if (selectedIconIndex > -1)
+    {
+        _wordSetBrief.wordSet = [_wordSets objectAtIndex:selectedIconIndex];
         
+        icon = [_unitIcons objectAtIndex:selectedIconIndex];
+        [icon zoomIn];
+        
+        CGPoint point = icon.center;
+        point = [_wordSetBrief convertPoint:point fromView:icon.superview];
+        [_wordSetBrief centerArrowToX:point.x];
+        [self performSelector:@selector(presentWordSetBrief) withObject:nil afterDelay:.25];
+        [_pieView gotoPart:selectedIconIndex];
     }
 }
 
@@ -207,10 +205,12 @@
 // Implement loadView to create a view hierarchy programmatically, without using a nib.
 - (void)loadView
 {
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     //if frist time lunch,then goto open tutorial slides 
-    int times = [[[DataController sharedDataController].settingsDictionary objectForKey:@"AppLoadedTimes"] intValue];
-    
-    if (times==0) {
+    if (![userDefaults boolForKey:kAppNotFirstTime]){
+        [userDefaults setBool:YES forKey:kAppNotFirstTime];
+        [userDefaults synchronize];
+        
         InfoScrollController *infoController = [[InfoScrollController alloc] initWithDisplayType:firstLoad];
         [self.navigationController pushViewController:infoController animated:NO];
         [infoController release];
@@ -266,6 +266,7 @@
     
     // pie chart
     _pieView = [[OpenGLView alloc] initWithFrame:CGRectMake(0, 160, 320, 320)];
+    _pieView.delegate = self;
     [self.view insertSubview:_pieView atIndex:1];
     
     // pie label is the tiny label displayed on pie chart
@@ -532,6 +533,11 @@
     InfoScrollController *controller = [[InfoScrollController alloc] initWithDisplayType:normalLoad];
     [self.navigationController pushViewController:controller animated:YES];
     [controller release];
+}
+
+- (void)tappedOnPie:(NSUInteger)index
+{
+    self.selectedIconIndex = index;
 }
 
 @end
