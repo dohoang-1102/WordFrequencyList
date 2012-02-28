@@ -30,5 +30,5 @@
     update word set soundFile = REVERSE(left(REVERSE(soundFile), instr(REVERSE(soundFile), '/')-1))
 
 
-*** to clean .git
+*** to clean .git ***
 find . | grep .svn | xargs rm -rf
